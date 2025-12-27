@@ -119,8 +119,7 @@ async def root():
     )
 
 
-# API v1 routes will be added here
-# from .api.v1 import health, races, sessions, laps, ingest
-# app.include_router(health.router, prefix=settings.API_PREFIX, tags=["Health"])
-# app.include_router(races.router, prefix=settings.API_PREFIX, tags=["Races"])
-# ...
+# API v1 routes
+from .api.router import api_router
+
+app.include_router(api_router, prefix=settings.API_PREFIX)
