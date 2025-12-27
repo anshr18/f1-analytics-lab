@@ -123,7 +123,10 @@ class FastF1Parser:
             if driver_laps.empty:
                 continue
 
-            driver_id = str(driver).lower().replace(" ", "_")
+            # Get driver abbreviation from session (3-letter code)
+            driver_info = session.get_driver(driver)
+            abbreviation = str(driver_info.get("Abbreviation", driver)) if pd.notna(driver_info.get("Abbreviation")) else str(driver)[:3].upper()
+            driver_id = abbreviation.lower()
             stint_number = 1
             current_compound = None
             stint_start = None

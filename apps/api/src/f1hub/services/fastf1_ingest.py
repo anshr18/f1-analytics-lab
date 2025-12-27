@@ -182,23 +182,42 @@ class FastF1IngestService:
 
     def _get_or_create_drivers(self, ff1_session) -> None:
         """Get or create drivers from session."""
+        import pandas as pd
+
         for driver_code in ff1_session.drivers:
-            driver_id = str(driver_code).lower().replace(" ", "_")
-
-            existing = self.db.query(Driver).filter(Driver.driver_id == driver_id).first()
-
-            if not existing:
-                # Get driver info from FastF1
+            try:
+                # Get driver info from FastF1 (returns pandas Series)
                 driver_info = ff1_session.get_driver(driver_code)
 
-                driver = Driver(
-                    driver_id=driver_id,
-                    full_name=str(driver_info.get("FullName", driver_code)),
-                    abbreviation=str(driver_info.get("Abbreviation", driver_code[:3])),
-                    number=int(driver_info.get("DriverNumber", 0)) if driver_info.get("DriverNumber") else None,
-                    country=None,  # Not available in FastF1
-                )
-                self.db.add(driver)
+                # Extract values from Series - use .get() method or check with pd.notna()
+                abbreviation = str(driver_info.get("Abbreviation", driver_code)) if pd.notna(driver_info.get("Abbreviation")) else str(driver_code)[:3].upper()
+
+                # Use abbreviation (3-letter code) as driver_id in lowercase
+                driver_id = abbreviation.lower()
+
+                # Check if driver already exists
+                existing = self.db.query(Driver).filter(Driver.driver_id == driver_id).first()
+
+                if not existing:
+                    full_name = str(driver_info.get("FullName", driver_code)) if pd.notna(driver_info.get("FullName")) else str(driver_code)
+
+                    # Handle driver number - could be NaN
+                    driver_num = driver_info.get("DriverNumber")
+                    driver_number = int(driver_num) if pd.notna(driver_num) else None
+
+                    driver = Driver(
+                        driver_id=driver_id,
+                        full_name=full_name,
+                        abbreviation=abbreviation,
+                        number=driver_number,
+                        country=None,  # Not available in FastF1
+                    )
+                    self.db.add(driver)
+                    logger.info(f"Added driver: {driver_id} = {full_name} #{driver_number}")
+
+            except Exception as e:
+                logger.error(f"Failed to add driver {driver_code}: {e}")
+                raise
 
         self.db.flush()
         logger.info(f"Processed {len(ff1_session.drivers)} drivers")
