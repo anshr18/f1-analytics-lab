@@ -12,10 +12,12 @@ from .v1 import drivers, health, ingest, laps, races, sessions, stints
 api_router = APIRouter()
 
 # Include all v1 routers
+# Note: Routers define their own paths (e.g., /sessions, /seasons, /laps)
+# We don't add prefixes here to keep URLs clean
 api_router.include_router(health.router, tags=["Health"])
-api_router.include_router(races.router, prefix="/races", tags=["Races"])
-api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
-api_router.include_router(laps.router, prefix="/laps", tags=["Laps"])
-api_router.include_router(stints.router, prefix="/stints", tags=["Stints"])
-api_router.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
+api_router.include_router(races.router, tags=["Races"])
+api_router.include_router(sessions.router, tags=["Sessions"])
+api_router.include_router(laps.router, tags=["Laps"])
+api_router.include_router(stints.router, tags=["Stints"])
+api_router.include_router(drivers.router, tags=["Drivers"])
 api_router.include_router(ingest.router, tags=["Ingest"])
