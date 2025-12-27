@@ -34,7 +34,7 @@ WORKDIR /app
 FROM base AS development
 
 # Copy dependency files
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 
 # Install dependencies with uv
 RUN uv pip install --system -e ".[dev]"
@@ -57,7 +57,7 @@ CMD ["uvicorn", "f1hub.main:app", "--host", "0.0.0.0", "--port", "8000", "--relo
 FROM base AS production
 
 # Copy dependency files
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 
 # Install only production dependencies
 RUN uv pip install --system .
