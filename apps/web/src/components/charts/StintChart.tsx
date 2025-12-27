@@ -124,8 +124,16 @@ export function StintChart({ sessionId }: StintChartProps) {
     return (
       <g>
         {stints.map((stint: any, index: number) => {
-          const stintWidth = (stint.laps / maxLap) * totalWidth;
-          const stintX = x + (stint.start / maxLap) * totalWidth;
+          // Calculate position and width based on lap range
+          // Start position: stint.start is the lap number where this stint begins
+          // Width: (stint.end - stint.start + 1) gives the number of laps in the stint
+          const stintStart = stint.start || 0;
+          const stintEnd = stint.end || stint.start || 0;
+          const stintLaps = stintEnd - stintStart + 1;
+
+          // Normalize to chart width (0-based, so stint starting at lap 1 should be at x position 0)
+          const stintX = x + ((stintStart - 1) / maxLap) * totalWidth;
+          const stintWidth = (stintLaps / maxLap) * totalWidth;
 
           return (
             <rect
