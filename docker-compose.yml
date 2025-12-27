@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PostgreSQL with pgvector extension
+  # ============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: f1hub-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-f1hub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-f1hub_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-f1hub}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - f1hub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-f1hub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================================
+  # Redis (Celery broker + cache)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: f1hub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - f1hub-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================================
+  # MinIO (S3-compatible object storage)
+  # ============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: f1hub-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio-data:/data
+    networks:
+      - f1hub-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================================
+  # FastAPI Backend
+  # ============================================================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    container_name: f1hub-api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-f1hub}:${POSTGRES_PASSWORD:-f1hub_dev_password}@postgres:5432/${POSTGRES_DB:-f1hub}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-f1hub}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FASTF1_CACHE_DIR: /app/data/fastf1_cache
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+      - ./libs:/libs
+      - ./data:/app/data
+      - fastf1-cache:/app/data/fastf1_cache
+    networks:
+      - f1hub-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting API server...' &&
+        uvicorn f1hub.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # ============================================================================
+  # Celery Worker
+  # ============================================================================
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    container_name: f1hub-worker
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-f1hub}:${POSTGRES_PASSWORD:-f1hub_dev_password}@postgres:5432/${POSTGRES_DB:-f1hub}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-f1hub}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FASTF1_CACHE_DIR: /app/data/fastf1_cache
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - ./apps/api:/app
+      - ./libs:/libs
+      - ./data:/app/data
+      - fastf1-cache:/app/data/fastf1_cache
+    networks:
+      - f1hub-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 10 &&
+        echo 'Starting Celery worker...' &&
+        celery -A f1hub.workers.celery_app worker --loglevel=info --concurrency=2
+      "
+
+  # ============================================================================
+  # Next.js Frontend
+  # ============================================================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: development
+    container_name: f1hub-web
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - f1hub-network
+    depends_on:
+      - api
+    restart: unless-stopped
+    command: npm run dev
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  f1hub-network:
+    driver: bridge
+    name: f1hub-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  postgres-data:
+    name: f1hub-postgres-data
+  redis-data:
+    name: f1hub-redis-data
+  minio-data:
+    name: f1hub-minio-data
+  fastf1-cache:
+    name: f1hub-fastf1-cache
