@@ -5,16 +5,11 @@ Service for ingesting F1 data from FastF1 into the database.
 """
 
 import logging
-import sys
 from datetime import date
-from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
-
-# Add libs to path for importing f1data
-sys.path.insert(0, str(Path(__file__).parents[5] / "libs" / "f1data" / "src"))
 
 from f1data.clients import FastF1Client
 from f1data.parsers import FastF1Parser

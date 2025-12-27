@@ -27,8 +27,8 @@ class Document(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     content = Column(Text, nullable=False)  # Full document content
     source_url = Column(String(1000), nullable=True)  # Original source URL
 
-    # Metadata (e.g., year, race, author, etc.)
-    metadata = Column(JSONB, nullable=True)
+    # Metadata (e.g., year, race, author, etc.) - renamed to avoid SQLAlchemy reserved name
+    doc_metadata = Column(JSONB, nullable=True)
 
     # Relationships
     embeddings = relationship("Embedding", back_populates="document", cascade="all, delete-orphan")
@@ -54,7 +54,7 @@ class Embedding(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     embedding = Column(Vector(1536), nullable=False)
 
     # Chunk metadata
-    metadata = Column(JSONB, nullable=True)
+    chunk_metadata = Column(JSONB, nullable=True)
 
     # Relationships
     document = relationship("Document", back_populates="embeddings")
@@ -76,7 +76,7 @@ class ChatSession(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     user_id = Column(String(100), nullable=True)  # Placeholder for Phase 3 auth
 
     # Session metadata
-    metadata = Column(JSONB, nullable=True)
+    session_metadata = Column(JSONB, nullable=True)
 
     # Relationships
     messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")

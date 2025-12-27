@@ -33,14 +33,20 @@ WORKDIR /app
 # ============================================================================
 FROM base AS development
 
+# Copy libs directory for f1data package
+COPY ./libs /libs
+
 # Copy dependency files
-COPY pyproject.toml README.md ./
+COPY ./apps/api/pyproject.toml ./apps/api/README.md ./
+
+# Install libs/f1data package
+RUN uv pip install --system -e /libs/f1data
 
 # Install dependencies with uv
 RUN uv pip install --system -e ".[dev]"
 
 # Copy source code
-COPY . .
+COPY ./apps/api .
 
 # Set PYTHONPATH
 ENV PYTHONPATH=/app/src:/libs
@@ -56,16 +62,22 @@ CMD ["uvicorn", "f1hub.main:app", "--host", "0.0.0.0", "--port", "8000", "--relo
 # ============================================================================
 FROM base AS production
 
+# Copy libs directory for f1data package
+COPY ./libs /libs
+
 # Copy dependency files
-COPY pyproject.toml README.md ./
+COPY ./apps/api/pyproject.toml ./apps/api/README.md ./
+
+# Install libs/f1data package
+RUN uv pip install --system /libs/f1data
 
 # Install only production dependencies
 RUN uv pip install --system .
 
 # Copy source code
-COPY src ./src
-COPY alembic ./alembic
-COPY alembic.ini ./
+COPY ./apps/api/src ./src
+COPY ./apps/api/alembic ./alembic
+COPY ./apps/api/alembic.ini ./
 
 # Create non-root user
 RUN useradd -m -u 1000 f1hub && chown -R f1hub:f1hub /app

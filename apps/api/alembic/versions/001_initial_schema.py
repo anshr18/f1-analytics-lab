@@ -309,7 +309,7 @@ def upgrade() -> None:
         sa.Column('title', sa.String(length=500), nullable=False),
         sa.Column('content', sa.Text(), nullable=False),
         sa.Column('source_url', sa.String(length=1000), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('doc_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_documents'))
@@ -324,7 +324,7 @@ def upgrade() -> None:
         sa.Column('chunk_index', sa.Integer(), nullable=False),
         sa.Column('chunk_text', sa.Text(), nullable=False),
         sa.Column('embedding', Vector(1536), nullable=False),  # pgvector Vector type
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('chunk_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name=op.f('fk_embeddings_document_id_documents')),
@@ -340,7 +340,7 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('session_name', sa.String(length=200), nullable=True),
         sa.Column('user_id', sa.String(length=100), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('session_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_chat_sessions'))
