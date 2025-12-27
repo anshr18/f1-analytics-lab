@@ -15,15 +15,7 @@ Or via Make:
 """
 
 import logging
-import os
 import sys
-from pathlib import Path
-
-# Add paths for imports
-script_dir = Path(__file__).parent
-project_root = script_dir.parent
-sys.path.insert(0, str(project_root / "apps" / "api" / "src"))
-sys.path.insert(0, str(project_root / "libs" / "f1data" / "src"))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

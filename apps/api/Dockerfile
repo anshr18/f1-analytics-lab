@@ -48,6 +48,9 @@ RUN uv pip install --system -e ".[dev]"
 # Copy source code
 COPY ./apps/api .
 
+# Copy scripts directory
+COPY ./scripts /app/scripts
+
 # Set PYTHONPATH
 ENV PYTHONPATH=/app/src:/libs
 
@@ -78,6 +81,9 @@ RUN uv pip install --system .
 COPY ./apps/api/src ./src
 COPY ./apps/api/alembic ./alembic
 COPY ./apps/api/alembic.ini ./
+
+# Copy scripts directory
+COPY ./scripts /app/scripts
 
 # Create non-root user
 RUN useradd -m -u 1000 f1hub && chown -R f1hub:f1hub /app

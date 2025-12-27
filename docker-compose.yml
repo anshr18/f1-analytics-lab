@@ -97,6 +97,7 @@ services:
     volumes:
       - ./apps/api:/app
       - ./libs:/libs
+      - ./scripts:/app/scripts
       - ./data:/app/data
       - fastf1-cache:/app/data/fastf1_cache
     networks:
@@ -148,6 +149,7 @@ services:
     volumes:
       - ./apps/api:/app
       - ./libs:/libs
+      - ./scripts:/app/scripts
       - ./data:/app/data
       - fastf1-cache:/app/data/fastf1_cache
     networks:
