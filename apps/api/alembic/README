@@ -1,0 +1,41 @@
+F1 Intelligence Hub - Database Migrations
+=========================================
+
+This directory contains Alembic database migrations.
+
+## Creating a New Migration
+
+```bash
+# Auto-generate migration from model changes
+alembic revision --autogenerate -m "description of changes"
+
+# Create empty migration
+alembic revision -m "description of changes"
+```
+
+## Running Migrations
+
+```bash
+# Upgrade to latest
+alembic upgrade head
+
+# Upgrade by one version
+alembic upgrade +1
+
+# Downgrade by one version
+alembic downgrade -1
+
+# Show current version
+alembic current
+
+# Show migration history
+alembic history
+```
+
+## Migration Best Practices
+
+1. Always review auto-generated migrations before applying
+2. Test migrations on a copy of production data
+3. Migrations should be reversible (implement downgrade)
+4. Include data migrations when changing schemas
+5. Never edit applied migrations, create new ones instead
