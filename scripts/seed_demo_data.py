@@ -4,7 +4,7 @@ Seed script for F1 Intelligence Hub
 
 This script populates the database with demo data:
 - 2024 season metadata (drivers, constructors, events)
-- Ingests 1-2 example sessions (e.g., Bahrain 2024 Race)
+- Ingests example sessions (Bahrain 2024 Race, Qualifying)
 - Verifies data integrity
 
 Usage:
@@ -14,39 +14,101 @@ Or via Make:
     make db-seed
 """
 
-import sys
+import logging
 import os
+import sys
+from pathlib import Path
 
-# Add the apps/api/src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'apps', 'api', 'src'))
+# Add paths for imports
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+sys.path.insert(0, str(project_root / "apps" / "api" / "src"))
+sys.path.insert(0, str(project_root / "libs" / "f1data" / "src"))
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from f1hub.core.config import get_settings
+from f1hub.services.fastf1_ingest import FastF1IngestService
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
 
 def main():
-    """Main seeding function"""
+    """Main seeding function."""
+    print("\n" + "=" * 60)
     print("🌱 F1 Intelligence Hub - Database Seeding")
-    print("=" * 50)
+    print("=" * 60)
     print()
 
-    # TODO: This will be implemented in Phase 0, Week 3
-    # For now, just print a message
-    print("⚠️  Seed script is not yet implemented.")
-    print()
-    print("This script will be completed in Phase 0, Week 3 after:")
-    print("  - Database models are created")
-    print("  - FastF1 ingestion service is built")
-    print("  - Celery workers are configured")
-    print()
-    print("Expected functionality:")
-    print("  ✓ Insert 2024 F1 season metadata")
-    print("  ✓ Insert all drivers and constructors")
-    print("  ✓ Insert event schedule")
-    print("  ✓ Ingest Bahrain 2024 Race session")
-    print("  ✓ Verify data integrity")
-    print()
-    print("For now, you can manually trigger ingestion via the API once it's running:")
-    print("  curl -X POST http://localhost:8000/api/v1/ingest/session \\")
-    print("    -H 'Content-Type: application/json' \\")
-    print("    -d '{\"year\": 2024, \"round\": 1, \"session_type\": \"R\"}'")
-    print()
+    # Load settings
+    settings = get_settings()
 
-if __name__ == '__main__':
+    # Create database session
+    engine = create_engine(settings.DATABASE_URL)
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
+
+    try:
+        # Sessions to ingest
+        sessions_to_ingest = [
+            {"year": 2024, "round": 1, "session_type": "Race", "name": "Bahrain GP Race"},
+            {"year": 2024, "round": 1, "session_type": "Q", "name": "Bahrain GP Qualifying"},
+        ]
+
+        print(f"📊 Will ingest {len(sessions_to_ingest)} sessions:")
+        for session in sessions_to_ingest:
+            print(f"  - {session['year']} Round {session['round']} {session['name']}")
+        print()
+
+        # Initialize ingestion service
+        service = FastF1IngestService(db)
+
+        # Ingest each session
+        for i, session_info in enumerate(sessions_to_ingest, 1):
+            print(f"\n[{i}/{len(sessions_to_ingest)}] Ingesting: {session_info['name']}")
+            print("-" * 60)
+
+            try:
+                session_id = service.ingest_session(
+                    year=session_info["year"],
+                    round_number=session_info["round"],
+                    session_type=session_info["session_type"]
+                )
+
+                print(f"✅ Successfully ingested session: {session_id}")
+
+            except Exception as e:
+                print(f"❌ Failed to ingest {session_info['name']}: {e}")
+                logger.error(f"Ingestion failed", exc_info=True)
+                continue
+
+        print("\n" + "=" * 60)
+        print("✅ Database seeding complete!")
+        print("=" * 60)
+        print()
+        print("📊 Data Summary:")
+        print(f"  - Sessions ingested: {len(sessions_to_ingest)}")
+        print()
+        print("🚀 Next steps:")
+        print("  1. Start the API: make dev-up")
+        print("  2. View docs: http://localhost:8000/docs")
+        print("  3. Query data: GET /api/v1/sessions")
+        print()
+
+    except Exception as e:
+        print(f"\n❌ Seeding failed: {e}")
+        logger.error("Seeding failed", exc_info=True)
+        sys.exit(1)
+
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
     main()
