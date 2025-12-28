@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RacePicker } from "@/components/RacePicker";
 import { LapChart } from "@/components/charts/LapChart";
 import { StintChart } from "@/components/charts/StintChart";
+import { PredictionSummaryCard } from "@/components/predictions/PredictionSummaryCard";
 
 export default function DashboardPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -74,6 +75,25 @@ export default function DashboardPage() {
       {/* Charts - Only show when session is selected */}
       {selectedSessionId && (
         <div className="space-y-6">
+          {/* ML Prediction Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PredictionSummaryCard
+              title="Expected Lap Time"
+              modelName="lap_time"
+              sessionId={selectedSessionId}
+            />
+            <PredictionSummaryCard
+              title="Overtake Probability"
+              modelName="overtake"
+              sessionId={selectedSessionId}
+            />
+            <PredictionSummaryCard
+              title="Predicted Winner"
+              modelName="race_result"
+              sessionId={selectedSessionId}
+            />
+          </div>
+
           <LapChart sessionId={selectedSessionId} />
           <StintChart sessionId={selectedSessionId} />
 
