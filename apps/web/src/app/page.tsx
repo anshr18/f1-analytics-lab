@@ -21,10 +21,13 @@ export default function Home() {
           </p>
         </Link>
 
-        <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md opacity-50 cursor-not-allowed">
+        <Link
+          href="/predictions"
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-f1red"
+        >
           <h3 className="text-2xl font-semibold mb-2">Predictions</h3>
-          <p className="text-gray-600 dark:text-gray-400">Coming in Phase 1: ML predictions</p>
-        </div>
+          <p className="text-gray-600 dark:text-gray-400">ML-powered predictions for race outcomes</p>
+        </Link>
 
         <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md opacity-50 cursor-not-allowed">
           <h3 className="text-2xl font-semibold mb-2">Strategy Simulator</h3>
@@ -37,26 +40,54 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
-        <h3 className="text-xl font-semibold mb-4">Phase 0: Data Foundation ✅</h3>
-        <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-          <li className="flex items-center">
-            <span className="text-green-500 mr-2">✓</span>
-            FastAPI backend with PostgreSQL + pgvector
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-500 mr-2">✓</span>
-            FastF1 data ingestion pipeline
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-500 mr-2">✓</span>
-            Celery async workers for data processing
-          </li>
-          <li className="flex items-center">
-            <span className="text-green-500 mr-2">✓</span>
-            Next.js 15 frontend with Recharts
-          </li>
-        </ul>
+      <div className="space-y-4">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Phase 0: Data Foundation ✅</h3>
+          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              FastAPI backend with PostgreSQL + pgvector
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              FastF1 data ingestion pipeline
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Celery async workers for data processing
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Next.js 15 frontend with Recharts
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Phase 1: ML Predictions 🚧</h3>
+          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Feature engineering (lap, stint, battle features)
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              4 ML models: Tyre deg, lap time, overtake, race result
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Model training scripts with MinIO storage
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Predictions page with interactive UI
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">⏳</span>
+              Dashboard integration (coming soon)
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
