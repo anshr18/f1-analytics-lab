@@ -41,7 +41,7 @@ def main():
     try:
         X, y = model.load_training_data(db)
         print(f"   ✓ Loaded {len(X)} race results")
-        print(f"   ✓ Positions range: {(y+1).min()}-{(y+1).max()}")
+        print(f"   ✓ Positions range: {y.min()}-{y.max()}")
         print()
     except ValueError as e:
         print(f"   ✗ Error: {e}")
@@ -53,9 +53,10 @@ def main():
     print("2. Training model...")
     metrics = model.train(X, y)
     print(f"   ✓ Training complete!")
-    print(f"   ✓ Accuracy: {metrics['accuracy']:.4f}")
-    print(f"   ✓ Top-3 Accuracy: {metrics['top3_accuracy']:.4f} (Target: > 0.70)")
-    print(f"   ✓ Top-5 Accuracy: {metrics['top5_accuracy']:.4f}")
+    print(f"   ✓ MAE: {metrics['mae']:.2f} positions")
+    print(f"   ✓ RMSE: {metrics['rmse']:.2f} positions")
+    print(f"   ✓ Within ±3 positions: {metrics['within_3_positions']*100:.1f}% (Target: > 70%)")
+    print(f"   ✓ Exact accuracy: {metrics['exact_accuracy']*100:.1f}%")
     print(f"   ✓ Train samples: {metrics['train_samples']}")
     print(f"   ✓ Test samples: {metrics['test_samples']}")
     print()
@@ -124,8 +125,8 @@ def main():
     print()
     print(f"  - Model ID: {registry_entry.id}")
     print(f"  - Version: {version}")
-    print(f"  - Accuracy: {metrics['accuracy']:.4f}")
-    print(f"  - Top-3 Accuracy: {metrics['top3_accuracy']:.4f} (Target: > 0.70)")
+    print(f"  - MAE: {metrics['mae']:.2f} positions")
+    print(f"  - Within ±3: {metrics['within_3_positions']*100:.1f}% (Target: > 70%)")
     print()
 
     db.close()

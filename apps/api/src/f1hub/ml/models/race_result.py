@@ -40,13 +40,12 @@ class RaceResultModel(BaseMLModel):
 
     def __init__(self):
         """Initialize the race result model."""
-        # XGBoost for multi-class classification (positions 1-20)
-        self.model = xgb.XGBClassifier(
+        # Use regression for position prediction to avoid sparse class issues
+        # We'll round the predictions to get final positions
+        self.model = xgb.XGBRegressor(
             n_estimators=200,
             learning_rate=0.05,
             max_depth=7,
-            objective="multi:softprob",
-            num_class=20,
             random_state=42,
             verbosity=0,
         )
@@ -128,8 +127,8 @@ class RaceResultModel(BaseMLModel):
         self.feature_names = ["grid_position", "avg_lap_time_seconds"] + self.driver_columns
 
         X = df[self.feature_names]
-        # XGBoost expects classes to be 0-indexed, so subtract 1 from positions
-        y = df["final_position"] - 1
+        # Keep positions as 1-20 for regression
+        y = df["final_position"]
 
         logger.info(f"Training features: {self.feature_names[:5]}... ({len(self.feature_names)} total)")
         logger.info(f"Position distribution: {df['final_position'].value_counts().head()}")
@@ -141,10 +140,10 @@ class RaceResultModel(BaseMLModel):
 
         Args:
             X: Training features
-            y: Training targets (0-indexed positions)
+            y: Training targets (positions 1-20)
 
         Returns:
-            Dictionary of metrics (accuracy, top3_accuracy, top5_accuracy)
+            Dictionary of metrics (mae, rmse, within_3_positions accuracy)
         """
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -155,16 +154,20 @@ class RaceResultModel(BaseMLModel):
         self.model.fit(X_train, y_train)
 
         y_pred = self.model.predict(X_test)
-        y_pred_proba = self.model.predict_proba(X_test)
+
+        # Round predictions to nearest position and clip to 1-20
+        y_pred_rounded = np.clip(np.round(y_pred), 1, 20)
+
+        # Calculate how many predictions are within 3 positions
+        within_3 = np.abs(y_pred_rounded - y_test) <= 3
+
+        from sklearn.metrics import mean_absolute_error, mean_squared_error
 
         metrics = {
-            "accuracy": float(accuracy_score(y_test, y_pred)),
-            "top3_accuracy": float(
-                top_k_accuracy_score(y_test, y_pred_proba, k=3, labels=np.arange(20))
-            ),
-            "top5_accuracy": float(
-                top_k_accuracy_score(y_test, y_pred_proba, k=5, labels=np.arange(20))
-            ),
+            "mae": float(mean_absolute_error(y_test, y_pred)),
+            "rmse": float(np.sqrt(mean_squared_error(y_test, y_pred))),
+            "within_3_positions": float(within_3.mean()),
+            "exact_accuracy": float((y_pred_rounded == y_test).mean()),
             "train_samples": len(X_train),
             "test_samples": len(X_test),
         }
@@ -180,20 +183,10 @@ class RaceResultModel(BaseMLModel):
             X: Features to predict on
 
         Returns:
-            Array of predicted positions (0-indexed)
+            Array of predicted positions (1-20, rounded and clipped)
         """
-        return self.model.predict(X)
-
-    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict position probabilities.
-
-        Args:
-            X: Features to predict on
-
-        Returns:
-            Array of shape (n_samples, 20) with probabilities for each position
-        """
-        return self.model.predict_proba(X)
+        predictions = self.model.predict(X)
+        return np.clip(np.round(predictions), 1, 20)
 
     def get_feature_names(self) -> List[str]:
         """Get required feature names.
