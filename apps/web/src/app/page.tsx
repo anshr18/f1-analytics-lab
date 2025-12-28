@@ -63,8 +63,8 @@ export default function Home() {
           </ul>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Phase 1: ML Predictions 🚧</h3>
+        <div className="bg-green-50 dark:bg-green-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Phase 1: ML Predictions ✅</h3>
           <ul className="space-y-2 text-gray-700 dark:text-gray-300">
             <li className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>
@@ -83,8 +83,12 @@ export default function Home() {
               Predictions page with interactive UI
             </li>
             <li className="flex items-center">
-              <span className="text-yellow-500 mr-2">⏳</span>
-              Dashboard integration (coming soon)
+              <span className="text-green-500 mr-2">✓</span>
+              Dashboard integration with prediction cards
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Async training automation (Celery tasks)
             </li>
           </ul>
         </div>
