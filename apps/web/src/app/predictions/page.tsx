@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Target,
@@ -25,6 +25,9 @@ import {
   predictRaceResult,
   predictTyreDegradation,
 } from "@/lib/api/predictions";
+import { fetchStints } from "@/lib/api/stints";
+import { fetchSessions } from "@/lib/api/sessions";
+import type { Stint, Session } from "@/types/api";
 import {
   BarChart,
   Bar,
@@ -69,6 +72,11 @@ export default function PredictionsPage() {
 
   // Form state - Tyre Degradation
   const [stintId, setStintId] = useState("");
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [stints, setStints] = useState<Stint[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const [loadingStints, setLoadingStints] = useState(false);
 
   const navItems = [
     { id: "predictions", label: "ML Predictions", icon: Target, href: "/predictions", active: true },
@@ -112,6 +120,45 @@ export default function PredictionsPage() {
       accuracy: "91.5%",
     },
   ];
+
+  // Load sessions on component mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const sessionsData = await fetchSessions(undefined, true); // Only get ingested sessions
+        setSessions(sessionsData);
+      } catch (err) {
+        console.error("Failed to load sessions:", err);
+      }
+    };
+    loadSessions();
+  }, []);
+
+  // Load stints when session or driver changes
+  useEffect(() => {
+    const loadStints = async () => {
+      if (!selectedSessionId) {
+        setStints([]);
+        return;
+      }
+
+      setLoadingStints(true);
+      try {
+        const stintsData = await fetchStints(
+          selectedSessionId,
+          selectedDriverId || undefined
+        );
+        setStints(stintsData);
+      } catch (err) {
+        console.error("Failed to load stints:", err);
+        setStints([]);
+      } finally {
+        setLoadingStints(false);
+      }
+    };
+
+    loadStints();
+  }, [selectedSessionId, selectedDriverId]);
 
   const handlePredict = async () => {
     setPredicting(true);
@@ -524,19 +571,72 @@ export default function PredictionsPage() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                        Stint ID
+                        Session
                       </label>
-                      <input
-                        type="text"
-                        value={stintId}
-                        onChange={(e) => setStintId(e.target.value)}
-                        placeholder="e.g., stint_123abc"
-                        className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                      />
-                      <p className="text-xs text-[var(--color-text-tertiary)] mt-2">
-                        Enter a valid stint ID from the database to predict tyre degradation
-                      </p>
+                      <select
+                        value={selectedSessionId}
+                        onChange={(e) => {
+                          setSelectedSessionId(e.target.value);
+                          setStintId(""); // Reset stint when session changes
+                        }}
+                        className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a session...</option>
+                        {sessions.map((session) => (
+                          <option key={session.id} value={session.id}>
+                            {session.session_type} - {new Date(session.session_date).toLocaleDateString()}
+                          </option>
+                        ))}
+                      </select>
                     </div>
+
+                    {selectedSessionId && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                            Driver (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedDriverId}
+                            onChange={(e) => {
+                              setSelectedDriverId(e.target.value);
+                              setStintId(""); // Reset stint when driver filter changes
+                            }}
+                            placeholder="e.g., VER, HAM, LEC"
+                            className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+                            Leave empty to see all drivers
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                            Stint {loadingStints && <span className="text-xs">(Loading...)</span>}
+                          </label>
+                          <select
+                            value={stintId}
+                            onChange={(e) => setStintId(e.target.value)}
+                            disabled={loadingStints || stints.length === 0}
+                            className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                          >
+                            <option value="">
+                              {loadingStints
+                                ? "Loading stints..."
+                                : stints.length === 0
+                                ? "No stints available"
+                                : "Select a stint..."}
+                            </option>
+                            {stints.map((stint) => (
+                              <option key={stint.id} value={stint.id}>
+                                {stint.driver_id} - Stint #{stint.stint_number} - {stint.compound} ({stint.total_laps || 0} laps)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
