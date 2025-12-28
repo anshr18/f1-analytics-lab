@@ -23,6 +23,7 @@ import {
   predictLapTime,
   predictOvertake,
   predictRaceResult,
+  predictTyreDegradation,
 } from "@/lib/api/predictions";
 import {
   BarChart,
@@ -35,6 +36,10 @@ import {
   Cell,
   RadialBarChart,
   RadialBar,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
 } from "recharts";
 import { motion } from "framer-motion";
 
@@ -61,6 +66,9 @@ export default function PredictionsPage() {
   const [compound, setCompound] = useState("SOFT");
   const [trackStatus, setTrackStatus] = useState("GREEN");
   const [position, setPosition] = useState(3);
+
+  // Form state - Tyre Degradation
+  const [stintId, setStintId] = useState("");
 
   const navItems = [
     { id: "predictions", label: "ML Predictions", icon: Target, href: "/predictions", active: true },
@@ -180,6 +188,24 @@ export default function PredictionsPage() {
               { label: "Track Status", value: result.track_status },
               { label: "Position", value: `P${result.position}` },
               { label: "Driver", value: result.driver_id },
+            ],
+          },
+        });
+      } else if (selectedModel === "tyre-degradation") {
+        const result = await predictTyreDegradation(stintId);
+
+        setPrediction({
+          type: "tyre-degradation",
+          data: result,
+          displayData: {
+            title: "Predicted Degradation Rate",
+            value: `${result.predicted_deg_per_lap.toFixed(4)}s/lap`,
+            confidence: 91.5, // Model accuracy
+            details: [
+              { label: "Stint ID", value: result.stint_id },
+              { label: "Compound", value: result.compound },
+              { label: "Driver", value: result.driver_id },
+              { label: "Model Version", value: result.model_version },
             ],
           },
         });
@@ -495,29 +521,38 @@ export default function PredictionsPage() {
                 )}
 
                 {selectedModel === "tyre-degradation" && (
-                  <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                    <p>Tyre Degradation predictions require a stint ID.</p>
-                    <p className="text-sm mt-2">This feature will be available soon.</p>
-                  </div>
-                )}
-
-                {selectedModel !== "tyre-degradation" && (
                   <>
-                    {error && (
-                      <div className="p-4 bg-red-900/20 border border-red-700/30 rounded-lg text-red-400 text-sm">
-                        {error}
-                      </div>
-                    )}
-                    <button
-                      onClick={handlePredict}
-                      disabled={predicting}
-                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      {predicting ? "Generating..." : "Generate Prediction"}
-                    </button>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                        Stint ID
+                      </label>
+                      <input
+                        type="text"
+                        value={stintId}
+                        onChange={(e) => setStintId(e.target.value)}
+                        placeholder="e.g., stint_123abc"
+                        className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      />
+                      <p className="text-xs text-[var(--color-text-tertiary)] mt-2">
+                        Enter a valid stint ID from the database to predict tyre degradation
+                      </p>
+                    </div>
                   </>
                 )}
+
+                {error && (
+                  <div className="p-4 bg-red-900/20 border border-red-700/30 rounded-lg text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+                <button
+                  onClick={handlePredict}
+                  disabled={predicting || (selectedModel === "tyre-degradation" && !stintId)}
+                  className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {predicting ? "Generating..." : "Generate Prediction"}
+                </button>
               </div>
             </div>
 
@@ -690,6 +725,63 @@ export default function PredictionsPage() {
                             ))}
                           </Bar>
                         </BarChart>
+                      </ResponsiveContainer>
+                    </>
+                  )}
+
+                  {/* Tyre Degradation - Area Chart showing degradation over stint */}
+                  {prediction.type === "tyre-degradation" && (
+                    <>
+                      <div className="text-sm font-semibold mb-4">Degradation Curve</div>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <AreaChart
+                          data={Array.from({ length: 20 }, (_, i) => ({
+                            lap: i + 1,
+                            degradation: parseFloat(prediction.displayData.value.replace("s/lap", "")) * (i + 1),
+                          }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorDeg" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                          <XAxis
+                            dataKey="lap"
+                            stroke="#a3a3a3"
+                            label={{ value: 'Lap', position: 'insideBottom', offset: -5, fill: '#a3a3a3' }}
+                          />
+                          <YAxis
+                            stroke="#a3a3a3"
+                            label={{ value: 'Cumulative Deg (s)', angle: -90, position: 'insideLeft', fill: '#a3a3a3' }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#141414",
+                              border: "1px solid #262626",
+                              borderRadius: "8px",
+                              color: "#fafafa",
+                            }}
+                            formatter={(value: any) => [`${value.toFixed(3)}s`, "Degradation"]}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="degradation"
+                            stroke="#f59e0b"
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill="url(#colorDeg)"
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="degradation"
+                            stroke="#f59e0b"
+                            strokeWidth={3}
+                            dot={{ fill: '#f59e0b', r: 4 }}
+                          />
+                        </AreaChart>
                       </ResponsiveContainer>
                     </>
                   )}
