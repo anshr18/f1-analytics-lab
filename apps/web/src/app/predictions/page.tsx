@@ -100,7 +100,7 @@ export default function PredictionsPage() {
       label: "Strategy Simulator",
       icon: Gamepad2,
       href: "/strategy",
-      disabled: true,
+      active: false,
     },
     {
       id: "assistant",

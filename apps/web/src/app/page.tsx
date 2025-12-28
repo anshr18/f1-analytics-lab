@@ -29,10 +29,13 @@ export default function Home() {
           <p className="text-gray-600 dark:text-gray-400">ML-powered predictions for race outcomes</p>
         </Link>
 
-        <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md opacity-50 cursor-not-allowed">
+        <Link
+          href="/strategy"
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-f1red"
+        >
           <h3 className="text-2xl font-semibold mb-2">Strategy Simulator</h3>
-          <p className="text-gray-600 dark:text-gray-400">Coming in Phase 2: Simulate race strategies</p>
-        </div>
+          <p className="text-gray-600 dark:text-gray-400">Calculate undercut/overcut strategies</p>
+        </Link>
 
         <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md opacity-50 cursor-not-allowed">
           <h3 className="text-2xl font-semibold mb-2">AI Chat</h3>
@@ -89,6 +92,40 @@ export default function Home() {
             <li className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>
               Async training automation (Celery tasks)
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-purple-50 dark:bg-purple-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Phase 2: Strategy Simulator 🚀</h3>
+          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Undercut/overcut strategy predictor
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Lap-by-lap pit stop simulation
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              ML-powered lap time predictions
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Interactive strategy calculator UI
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Animated charts for gap evolution
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">○</span>
+              Safety car strategy recommender (planned)
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">○</span>
+              Full race simulation engine (planned)
             </li>
           </ul>
         </div>
