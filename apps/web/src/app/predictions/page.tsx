@@ -29,12 +29,25 @@ export default function PredictionsPage() {
   const [selectedModel, setSelectedModel] = useState<string | null>("race-result");
   const [predicting, setPredicting] = useState(false);
   const [prediction, setPrediction] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [driver, setDriver] = useState("Charles Leclerc");
+  // Form state - Race Result
+  const [driverId, setDriverId] = useState("LEC");
   const [gridPosition, setGridPosition] = useState(1);
-  const [weather, setWeather] = useState("Dry");
-  const [trackTemp, setTrackTemp] = useState(45);
+  const [avgLapTime, setAvgLapTime] = useState(90.5);
+
+  // Form state - Overtake
+  const [gapSeconds, setGapSeconds] = useState(1.2);
+  const [closingRate, setClosingRate] = useState(0.3);
+  const [tyreAdvantage, setTyreAdvantage] = useState(5);
+  const [drsAvailable, setDrsAvailable] = useState(true);
+  const [lapNumber, setLapNumber] = useState(25);
+
+  // Form state - Lap Time
+  const [tyreAge, setTyreAge] = useState(10);
+  const [compound, setCompound] = useState("SOFT");
+  const [trackStatus, setTrackStatus] = useState("GREEN");
+  const [position, setPosition] = useState(3);
 
   const navItems = [
     { id: "predictions", label: "ML Predictions", icon: Target, href: "/predictions", active: true },
@@ -62,6 +75,14 @@ export default function PredictionsPage() {
       accuracy: "82.1%",
     },
     {
+      id: "lap-time",
+      name: "Lap Time Predictor",
+      description: "Predicts lap times based on tire age, compound, and track conditions",
+      icon: TrendingUp,
+      color: "bg-green-500",
+      accuracy: "89.2%",
+    },
+    {
       id: "tyre-degradation",
       name: "Tyre Degradation",
       description: "Forecasts tire wear rates and optimal pit stop windows",
@@ -73,24 +94,86 @@ export default function PredictionsPage() {
 
   const handlePredict = async () => {
     setPredicting(true);
-    try {
-      // Simulate prediction
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    setError(null);
 
-      setPrediction({
-        position: 1,
-        confidence: 86.5,
-        driver: driver,
-        impactFactors: [
-          { name: "Grid Position", impact: "+35%", positive: true },
-          { name: "Weather Conditions", impact: "+25%", positive: true },
-          { name: "Track Performance", impact: "+20%", positive: true },
-          { name: "Car Setup", impact: "-20%", positive: false },
-        ],
-        modelAccuracy: "87.3%",
-      });
-    } catch (error) {
-      console.error("Prediction failed:", error);
+    try {
+      if (selectedModel === "race-result") {
+        const result = await predictRaceResult({
+          grid_position: gridPosition,
+          avg_lap_time: avgLapTime,
+          driver_id: driverId,
+        });
+
+        setPrediction({
+          type: "race-result",
+          data: result,
+          displayData: {
+            title: "Predicted Finish Position",
+            value: `P${result.predicted_position}`,
+            confidence: Object.values(result.top3_probabilities).reduce((a, b) => a + b, 0) * 100,
+            details: [
+              { label: "Grid Position", value: `P${result.grid_position}` },
+              { label: "Avg Lap Time", value: `${result.avg_lap_time.toFixed(2)}s` },
+              { label: "Driver", value: result.driver_id },
+              { label: "Model Version", value: result.model_version },
+            ],
+            probabilities: result.top3_probabilities,
+          },
+        });
+      } else if (selectedModel === "overtake") {
+        const result = await predictOvertake({
+          gap_seconds: gapSeconds,
+          closing_rate: closingRate,
+          tyre_advantage: tyreAdvantage,
+          drs_available: drsAvailable,
+          lap_number: lapNumber,
+        });
+
+        setPrediction({
+          type: "overtake",
+          data: result,
+          displayData: {
+            title: "Overtake Probability",
+            value: `${(result.overtake_probability * 100).toFixed(1)}%`,
+            confidence: result.overtake_probability * 100,
+            details: [
+              { label: "Gap", value: `${result.gap_seconds.toFixed(2)}s` },
+              { label: "Closing Rate", value: `${result.closing_rate.toFixed(2)}s/lap` },
+              { label: "Tyre Advantage", value: `${result.tyre_advantage} laps` },
+              { label: "DRS", value: result.drs_available ? "Available" : "Not Available" },
+              { label: "Lap Number", value: result.lap_number.toString() },
+            ],
+          },
+        });
+      } else if (selectedModel === "lap-time") {
+        const result = await predictLapTime({
+          tyre_age: tyreAge,
+          compound: compound,
+          track_status: trackStatus,
+          position: position,
+          driver_id: driverId,
+        });
+
+        setPrediction({
+          type: "lap-time",
+          data: result,
+          displayData: {
+            title: "Predicted Lap Time",
+            value: `${result.predicted_lap_time.toFixed(3)}s`,
+            confidence: 85, // Placeholder confidence
+            details: [
+              { label: "Tyre Age", value: `${result.tyre_age} laps` },
+              { label: "Compound", value: result.compound },
+              { label: "Track Status", value: result.track_status },
+              { label: "Position", value: `P${result.position}` },
+              { label: "Driver", value: result.driver_id },
+            ],
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error("Prediction failed:", err);
+      setError(err.message || "Failed to generate prediction. Please try again.");
     } finally {
       setPredicting(false);
     }
@@ -142,14 +225,14 @@ export default function PredictionsPage() {
             {models.map((model) => {
               const Icon = model.icon;
               return (
-                <button
+                <div
                   key={model.id}
                   onClick={() => {
                     setSelectedModel(model.id);
                     setPrediction(null);
                   }}
                   className={`
-                    w-full text-left p-4 rounded-xl border-2 transition-all
+                    w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer
                     ${
                       selectedModel === model.id
                         ? "border-[var(--color-primary)] bg-[var(--color-surface)]"
@@ -161,14 +244,6 @@ export default function PredictionsPage() {
                     <div className={`p-3 rounded-lg ${model.color}`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <button
-                      className="ml-auto p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      ×
-                    </button>
                   </div>
                   <h3 className="text-base font-semibold mt-3 mb-2">
                     {model.name}
@@ -187,7 +262,7 @@ export default function PredictionsPage() {
                       {model.accuracy}
                     </span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -206,97 +281,235 @@ export default function PredictionsPage() {
                 </div>
               </div>
 
-              {/* Model Features */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">
-                  Model Features
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {["Grid Position", "Weather", "Track History", "Car Performance"].map((feature) => (
-                    <span
-                      key={feature}
-                      className="px-3 py-1.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-secondary)]"
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Form Fields */}
+              {/* Form Fields - Dynamic based on selected model */}
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                    Driver
-                  </label>
-                  <select
-                    value={driver}
-                    onChange={(e) => setDriver(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  >
-                    <option>Charles Leclerc</option>
-                    <option>Max Verstappen</option>
-                    <option>Lewis Hamilton</option>
-                    <option>Lando Norris</option>
-                  </select>
-                </div>
+                {selectedModel === "race-result" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                        Driver ID
+                      </label>
+                      <select
+                        value={driverId}
+                        onChange={(e) => setDriverId(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      >
+                        <option value="LEC">Charles Leclerc (LEC)</option>
+                        <option value="VER">Max Verstappen (VER)</option>
+                        <option value="HAM">Lewis Hamilton (HAM)</option>
+                        <option value="NOR">Lando Norris (NOR)</option>
+                        <option value="SAI">Carlos Sainz (SAI)</option>
+                        <option value="PER">Sergio Perez (PER)</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Grid Position
+                        </label>
+                        <input
+                          type="number"
+                          value={gridPosition}
+                          onChange={(e) => setGridPosition(Number(e.target.value))}
+                          min="1"
+                          max="20"
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Avg Lap Time (s)
+                        </label>
+                        <input
+                          type="number"
+                          value={avgLapTime}
+                          onChange={(e) => setAvgLapTime(Number(e.target.value))}
+                          step="0.1"
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                      Grid Position
-                    </label>
-                    <input
-                      type="number"
-                      value={gridPosition}
-                      onChange={(e) => setGridPosition(Number(e.target.value))}
-                      min="1"
-                      max="20"
-                      className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                    />
+                {selectedModel === "overtake" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Gap (seconds)
+                        </label>
+                        <input
+                          type="number"
+                          value={gapSeconds}
+                          onChange={(e) => setGapSeconds(Number(e.target.value))}
+                          step="0.1"
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Closing Rate (s/lap)
+                        </label>
+                        <input
+                          type="number"
+                          value={closingRate}
+                          onChange={(e) => setClosingRate(Number(e.target.value))}
+                          step="0.1"
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Tyre Advantage (laps)
+                        </label>
+                        <input
+                          type="number"
+                          value={tyreAdvantage}
+                          onChange={(e) => setTyreAdvantage(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Lap Number
+                        </label>
+                        <input
+                          type="number"
+                          value={lapNumber}
+                          onChange={(e) => setLapNumber(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="drs"
+                        checked={drsAvailable}
+                        onChange={(e) => setDrsAvailable(e.target.checked)}
+                        className="w-4 h-4 text-[var(--color-primary)]"
+                      />
+                      <label htmlFor="drs" className="text-sm font-medium text-[var(--color-text-secondary)]">
+                        DRS Available
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                {selectedModel === "lap-time" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                        Driver ID
+                      </label>
+                      <select
+                        value={driverId}
+                        onChange={(e) => setDriverId(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      >
+                        <option value="LEC">Charles Leclerc (LEC)</option>
+                        <option value="VER">Max Verstappen (VER)</option>
+                        <option value="HAM">Lewis Hamilton (HAM)</option>
+                        <option value="NOR">Lando Norris (NOR)</option>
+                        <option value="SAI">Carlos Sainz (SAI)</option>
+                        <option value="PER">Sergio Perez (PER)</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Tyre Age (laps)
+                        </label>
+                        <input
+                          type="number"
+                          value={tyreAge}
+                          onChange={(e) => setTyreAge(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Compound
+                        </label>
+                        <select
+                          value={compound}
+                          onChange={(e) => setCompound(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        >
+                          <option value="SOFT">SOFT</option>
+                          <option value="MEDIUM">MEDIUM</option>
+                          <option value="HARD">HARD</option>
+                          <option value="INTERMEDIATE">INTERMEDIATE</option>
+                          <option value="WET">WET</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Track Status
+                        </label>
+                        <select
+                          value={trackStatus}
+                          onChange={(e) => setTrackStatus(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        >
+                          <option value="GREEN">GREEN</option>
+                          <option value="YELLOW">YELLOW</option>
+                          <option value="RED">RED</option>
+                          <option value="SC">Safety Car</option>
+                          <option value="VSC">Virtual Safety Car</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                          Position
+                        </label>
+                        <input
+                          type="number"
+                          value={position}
+                          onChange={(e) => setPosition(Number(e.target.value))}
+                          min="1"
+                          max="20"
+                          className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {selectedModel === "tyre-degradation" && (
+                  <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                    <p>Tyre Degradation predictions require a stint ID.</p>
+                    <p className="text-sm mt-2">This feature will be available soon.</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                      Weather
-                    </label>
-                    <select
-                      value={weather}
-                      onChange={(e) => setWeather(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                )}
+
+                {selectedModel !== "tyre-degradation" && (
+                  <>
+                    {error && (
+                      <div className="p-4 bg-red-900/20 border border-red-700/30 rounded-lg text-red-400 text-sm">
+                        {error}
+                      </div>
+                    )}
+                    <button
+                      onClick={handlePredict}
+                      disabled={predicting}
+                      className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option>Dry</option>
-                      <option>Wet</option>
-                      <option>Mixed</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                    Track Temperature (°C)
-                  </label>
-                  <input
-                    type="number"
-                    value={trackTemp}
-                    onChange={(e) => setTrackTemp(Number(e.target.value))}
-                    placeholder="e.g., 45"
-                    className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  />
-                </div>
-
-                <button
-                  onClick={handlePredict}
-                  disabled={predicting}
-                  className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {predicting ? "Generating..." : "Generate Prediction"}
-                </button>
+                      <Sparkles className="w-4 h-4" />
+                      {predicting ? "Generating..." : "Generate Prediction"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Prediction Results */}
-            {prediction ? (
+            {prediction?.displayData ? (
               <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
@@ -305,55 +518,66 @@ export default function PredictionsPage() {
 
                 {/* Primary Prediction */}
                 <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700/30 rounded-xl p-6 mb-6">
-                  <div className="text-sm text-green-400 mb-2">Primary Prediction</div>
+                  <div className="text-sm text-green-400 mb-2">{prediction.displayData.title}</div>
                   <div className="text-6xl font-bold text-green-400 mb-2">
-                    P{prediction.position}
+                    {prediction.displayData.value}
                   </div>
-                  <div className="text-sm text-[var(--color-text-secondary)] mb-4">
-                    Predicted Finish for {prediction.driver}
-                  </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-4">
                     <span className="text-sm text-[var(--color-text-secondary)]">Confidence</span>
-                    <span className="text-lg font-semibold text-green-400">{prediction.confidence}%</span>
+                    <span className="text-lg font-semibold text-green-400">
+                      {prediction.displayData.confidence.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="mt-2 bg-[var(--color-background)] rounded-full h-2">
                     <div
                       className="bg-green-400 h-2 rounded-full"
-                      style={{ width: `${prediction.confidence}%` }}
+                      style={{ width: `${prediction.displayData.confidence}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Impact Factors */}
+                {/* Prediction Details */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Info className="w-4 h-4 text-[var(--color-info)]" />
-                    <h4 className="font-semibold">Impact Factors</h4>
+                    <h4 className="font-semibold">Prediction Details</h4>
                   </div>
                   <div className="space-y-3">
-                    {prediction.impactFactors.map((factor: any, idx: number) => (
+                    {prediction.displayData.details.map((detail: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between">
-                        <span className="text-sm text-[var(--color-text-primary)]">{factor.name}</span>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-24 h-1.5 rounded-full ${factor.positive ? 'bg-green-500' : 'bg-orange-500'}`} />
-                          <span className={`text-sm font-semibold w-16 text-right ${factor.positive ? 'text-green-400' : 'text-orange-400'}`}>
-                            {factor.impact}
-                          </span>
-                        </div>
+                        <span className="text-sm text-[var(--color-text-secondary)]">{detail.label}</span>
+                        <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                          {detail.value}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Model Accuracy */}
-                <div className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4">
-                  <div className="text-sm font-semibold mb-2">
-                    Model Accuracy: {prediction.modelAccuracy}
+                {/* Top 3 Probabilities (Race Result only) */}
+                {prediction.displayData.probabilities && (
+                  <div className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4">
+                    <div className="text-sm font-semibold mb-3">Top 3 Probabilities</div>
+                    <div className="space-y-2">
+                      {Object.entries(prediction.displayData.probabilities).map(([position, prob]: [string, any]) => (
+                        <div key={position} className="flex items-center justify-between">
+                          <span className="text-sm text-[var(--color-text-secondary)]">P{position}</span>
+                          <div className="flex items-center gap-2 flex-1 ml-4">
+                            <div className="flex-1 bg-[var(--color-surface)] rounded-full h-1.5">
+                              <div
+                                className="bg-[var(--color-primary)] h-1.5 rounded-full"
+                                style={{ width: `${prob * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-semibold text-[var(--color-text-primary)] w-12 text-right">
+                              {(prob * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-xs text-[var(--color-text-secondary)]">
-                    Based on analysis of 500+ races using 4 key parameters
-                  </div>
-                </div>
+                )}
               </div>
             ) : (
               <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-12 text-center">
@@ -362,7 +586,7 @@ export default function PredictionsPage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">No predictions yet</h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Fill in the form and click &quot;Generate Prediction&quot;
+                  Select a model, fill in the form, and click &quot;Generate Prediction&quot;
                 </p>
               </div>
             )}
