@@ -20,7 +20,7 @@ from f1hub.services.ml_service import MLService
 router = APIRouter(prefix="/predictions")
 
 
-@router.post("/tyre-degradation/{stint_id}", response_model=TyreDegradationPredictionResponse)
+@router.get("/tyre-degradation/{stint_id}", response_model=TyreDegradationPredictionResponse)
 async def predict_tyre_degradation(
     stint_id: UUID,
     db: Session = Depends(get_db),
