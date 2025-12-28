@@ -47,7 +47,9 @@ import {
 import { motion } from "framer-motion";
 
 export default function PredictionsPage() {
-  const [selectedModel, setSelectedModel] = useState<string | null>("race-result");
+  const [selectedModel, setSelectedModel] = useState<string | null>(
+    "race-result"
+  );
   const [predicting, setPredicting] = useState(false);
   const [prediction, setPrediction] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,18 +81,49 @@ export default function PredictionsPage() {
   const [loadingStints, setLoadingStints] = useState(false);
 
   const navItems = [
-    { id: "predictions", label: "ML Predictions", icon: Target, href: "/predictions", active: true },
-    { id: "dashboard", label: "Dashboard", icon: BarChart3, href: "/dashboard", active: false },
-    { id: "strategy", label: "Strategy Simulator", icon: Gamepad2, href: "/strategy", disabled: true },
-    { id: "assistant", label: "AI Assistant", icon: MessageSquare, href: "/assistant", disabled: true },
-    { id: "live", label: "Live Timing", icon: Radio, href: "/live", disabled: true },
+    {
+      id: "predictions",
+      label: "ML Predictions",
+      icon: Target,
+      href: "/predictions",
+      active: true,
+    },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: BarChart3,
+      href: "/dashboard",
+      active: false,
+    },
+    {
+      id: "strategy",
+      label: "Strategy Simulator",
+      icon: Gamepad2,
+      href: "/strategy",
+      disabled: true,
+    },
+    {
+      id: "assistant",
+      label: "AI Assistant",
+      icon: MessageSquare,
+      href: "/assistant",
+      disabled: true,
+    },
+    {
+      id: "live",
+      label: "Live Timing",
+      icon: Radio,
+      href: "/live",
+      disabled: true,
+    },
   ];
 
   const models = [
     {
       id: "race-result",
       name: "Race Result Predictor",
-      description: "Predicts race finishing positions based on qualifying, weather, and historical data",
+      description:
+        "Predicts race finishing positions based on qualifying, weather, and historical data",
       icon: Target,
       color: "bg-blue-500",
       accuracy: "87.3%",
@@ -98,7 +131,8 @@ export default function PredictionsPage() {
     {
       id: "overtake",
       name: "Overtake Probability",
-      description: "Calculates likelihood of successful overtakes using real-time race conditions",
+      description:
+        "Calculates likelihood of successful overtakes using real-time race conditions",
       icon: Zap,
       color: "bg-purple-500",
       accuracy: "82.1%",
@@ -106,7 +140,8 @@ export default function PredictionsPage() {
     {
       id: "lap-time",
       name: "Lap Time Predictor",
-      description: "Predicts lap times based on tire age, compound, and track conditions",
+      description:
+        "Predicts lap times based on tire age, compound, and track conditions",
       icon: TrendingUp,
       color: "bg-green-500",
       accuracy: "89.2%",
@@ -178,10 +213,17 @@ export default function PredictionsPage() {
           displayData: {
             title: "Predicted Finish Position",
             value: `P${result.predicted_position}`,
-            confidence: Object.values(result.top3_probabilities).reduce((a, b) => a + b, 0) * 100,
+            confidence:
+              Object.values(result.top3_probabilities).reduce(
+                (a, b) => a + b,
+                0
+              ) * 100,
             details: [
               { label: "Grid Position", value: `P${result.grid_position}` },
-              { label: "Avg Lap Time", value: `${result.avg_lap_time.toFixed(2)}s` },
+              {
+                label: "Avg Lap Time",
+                value: `${result.avg_lap_time.toFixed(2)}s`,
+              },
               { label: "Driver", value: result.driver_id },
               { label: "Model Version", value: result.model_version },
             ],
@@ -206,9 +248,18 @@ export default function PredictionsPage() {
             confidence: result.overtake_probability * 100,
             details: [
               { label: "Gap", value: `${result.gap_seconds.toFixed(2)}s` },
-              { label: "Closing Rate", value: `${result.closing_rate.toFixed(2)}s/lap` },
-              { label: "Tyre Advantage", value: `${result.tyre_advantage} laps` },
-              { label: "DRS", value: result.drs_available ? "Available" : "Not Available" },
+              {
+                label: "Closing Rate",
+                value: `${result.closing_rate.toFixed(2)}s/lap`,
+              },
+              {
+                label: "Tyre Advantage",
+                value: `${result.tyre_advantage} laps`,
+              },
+              {
+                label: "DRS",
+                value: result.drs_available ? "Available" : "Not Available",
+              },
               { label: "Lap Number", value: result.lap_number.toString() },
             ],
           },
@@ -259,13 +310,15 @@ export default function PredictionsPage() {
       }
     } catch (err: any) {
       console.error("Prediction failed:", err);
-      setError(err.message || "Failed to generate prediction. Please try again.");
+      setError(
+        err.message || "Failed to generate prediction. Please try again."
+      );
     } finally {
       setPredicting(false);
     }
   };
 
-  const selectedModelData = models.find(m => m.id === selectedModel);
+  const selectedModelData = models.find((m) => m.id === selectedModel);
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
@@ -281,7 +334,7 @@ export default function PredictionsPage() {
                   href={item.disabled ? "#" : item.href}
                   className={`
                     flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
-                    ${item.disabled ? 'opacity-40 cursor-not-allowed' : ''}
+                    ${item.disabled ? "opacity-40 cursor-not-allowed" : ""}
                     ${
                       item.active
                         ? "text-[var(--color-primary)]"
@@ -340,7 +393,10 @@ export default function PredictionsPage() {
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-[var(--color-background)] rounded-full h-1.5">
                       <div
-                        className={`h-1.5 rounded-full ${model.color.replace('bg-', 'bg-')}`}
+                        className={`h-1.5 rounded-full ${model.color.replace(
+                          "bg-",
+                          "bg-"
+                        )}`}
                         style={{ width: model.accuracy }}
                       />
                     </div>
@@ -396,7 +452,9 @@ export default function PredictionsPage() {
                         <input
                           type="number"
                           value={gridPosition}
-                          onChange={(e) => setGridPosition(Number(e.target.value))}
+                          onChange={(e) =>
+                            setGridPosition(Number(e.target.value))
+                          }
                           min="1"
                           max="20"
                           className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
@@ -409,7 +467,9 @@ export default function PredictionsPage() {
                         <input
                           type="number"
                           value={avgLapTime}
-                          onChange={(e) => setAvgLapTime(Number(e.target.value))}
+                          onChange={(e) =>
+                            setAvgLapTime(Number(e.target.value))
+                          }
                           step="0.1"
                           className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                         />
@@ -428,7 +488,9 @@ export default function PredictionsPage() {
                         <input
                           type="number"
                           value={gapSeconds}
-                          onChange={(e) => setGapSeconds(Number(e.target.value))}
+                          onChange={(e) =>
+                            setGapSeconds(Number(e.target.value))
+                          }
                           step="0.1"
                           className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                         />
@@ -440,7 +502,9 @@ export default function PredictionsPage() {
                         <input
                           type="number"
                           value={closingRate}
-                          onChange={(e) => setClosingRate(Number(e.target.value))}
+                          onChange={(e) =>
+                            setClosingRate(Number(e.target.value))
+                          }
                           step="0.1"
                           className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                         />
@@ -454,7 +518,9 @@ export default function PredictionsPage() {
                         <input
                           type="number"
                           value={tyreAdvantage}
-                          onChange={(e) => setTyreAdvantage(Number(e.target.value))}
+                          onChange={(e) =>
+                            setTyreAdvantage(Number(e.target.value))
+                          }
                           className="w-full px-4 py-2.5 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                         />
                       </div>
@@ -478,7 +544,10 @@ export default function PredictionsPage() {
                         onChange={(e) => setDrsAvailable(e.target.checked)}
                         className="w-4 h-4 text-[var(--color-primary)]"
                       />
-                      <label htmlFor="drs" className="text-sm font-medium text-[var(--color-text-secondary)]">
+                      <label
+                        htmlFor="drs"
+                        className="text-sm font-medium text-[var(--color-text-secondary)]"
+                      >
                         DRS Available
                       </label>
                     </div>
@@ -584,7 +653,10 @@ export default function PredictionsPage() {
                         <option value="">Select a session...</option>
                         {sessions.map((session) => (
                           <option key={session.id} value={session.id}>
-                            {session.session_type} - {new Date(session.session_date).toLocaleDateString()}
+                            {session.session_type} -{" "}
+                            {new Date(
+                              session.session_date
+                            ).toLocaleDateString()}
                           </option>
                         ))}
                       </select>
@@ -613,7 +685,10 @@ export default function PredictionsPage() {
 
                         <div>
                           <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                            Stint {loadingStints && <span className="text-xs">(Loading...)</span>}
+                            Stint{" "}
+                            {loadingStints && (
+                              <span className="text-xs">(Loading...)</span>
+                            )}
                           </label>
                           <select
                             value={stintId}
@@ -630,7 +705,9 @@ export default function PredictionsPage() {
                             </option>
                             {stints.map((stint) => (
                               <option key={stint.id} value={stint.id}>
-                                {stint.driver_id} - Stint #{stint.stint_number} - {stint.compound} ({stint.total_laps || 0} laps)
+                                {stint.driver_id} - Stint #{stint.stint_number}{" "}
+                                - {stint.compound} ({stint.total_laps || 0}{" "}
+                                laps)
                               </option>
                             ))}
                           </select>
@@ -647,7 +724,10 @@ export default function PredictionsPage() {
                 )}
                 <button
                   onClick={handlePredict}
-                  disabled={predicting || (selectedModel === "tyre-degradation" && !stintId)}
+                  disabled={
+                    predicting ||
+                    (selectedModel === "tyre-degradation" && !stintId)
+                  }
                   className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                 >
                   <Sparkles className="w-4 h-4" />
@@ -666,12 +746,16 @@ export default function PredictionsPage() {
 
                 {/* Primary Prediction */}
                 <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700/30 rounded-xl p-6 mb-6">
-                  <div className="text-sm text-green-400 mb-2">{prediction.displayData.title}</div>
+                  <div className="text-sm text-green-400 mb-2">
+                    {prediction.displayData.title}
+                  </div>
                   <div className="text-6xl font-bold text-green-400 mb-2">
                     {prediction.displayData.value}
                   </div>
                   <div className="flex items-center justify-between mt-4">
-                    <span className="text-sm text-[var(--color-text-secondary)]">Confidence</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      Confidence
+                    </span>
                     <span className="text-lg font-semibold text-green-400">
                       {prediction.displayData.confidence.toFixed(1)}%
                     </span>
@@ -691,14 +775,21 @@ export default function PredictionsPage() {
                     <h4 className="font-semibold">Prediction Details</h4>
                   </div>
                   <div className="space-y-3">
-                    {prediction.displayData.details.map((detail: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between">
-                        <span className="text-sm text-[var(--color-text-secondary)]">{detail.label}</span>
-                        <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-                          {detail.value}
-                        </span>
-                      </div>
-                    ))}
+                    {prediction.displayData.details.map(
+                      (detail: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-sm text-[var(--color-text-secondary)]">
+                            {detail.label}
+                          </span>
+                          <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            {detail.value}
+                          </span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -710,43 +801,71 @@ export default function PredictionsPage() {
                   className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-6"
                 >
                   {/* Race Result - Bar Chart for Top 3 Probabilities */}
-                  {prediction.type === "race-result" && prediction.displayData.probabilities && (
-                    <>
-                      <div className="text-sm font-semibold mb-4">Top 3 Probabilities</div>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <BarChart
-                          data={Object.entries(prediction.displayData.probabilities).map(([pos, prob]) => ({
-                            position: `P${pos}`,
-                            probability: (prob as number) * 100,
-                          }))}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                          <XAxis dataKey="position" stroke="#a3a3a3" />
-                          <YAxis stroke="#a3a3a3" />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "#141414",
-                              border: "1px solid #262626",
-                              borderRadius: "8px",
-                              color: "#fafafa",
-                            }}
-                            formatter={(value: any) => [`${value.toFixed(1)}%`, "Probability"]}
-                          />
-                          <Bar dataKey="probability" fill="#ef4444" radius={[8, 8, 0, 0]}>
-                            {Object.entries(prediction.displayData.probabilities).map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? "#10b981" : index === 1 ? "#3b82f6" : "#f59e0b"} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </>
-                  )}
+                  {prediction.type === "race-result" &&
+                    prediction.displayData.probabilities && (
+                      <>
+                        <div className="text-sm font-semibold mb-4">
+                          Top 3 Probabilities
+                        </div>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <BarChart
+                            data={Object.entries(
+                              prediction.displayData.probabilities
+                            ).map(([pos, prob]) => ({
+                              position: `P${pos}`,
+                              probability: (prob as number) * 100,
+                            }))}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#262626"
+                            />
+                            <XAxis dataKey="position" stroke="#a3a3a3" />
+                            <YAxis stroke="#a3a3a3" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#141414",
+                                border: "1px solid #262626",
+                                borderRadius: "8px",
+                                color: "#fafafa",
+                              }}
+                              formatter={(value: any) => [
+                                `${value.toFixed(1)}%`,
+                                "Probability",
+                              ]}
+                            />
+                            <Bar
+                              dataKey="probability"
+                              fill="#ef4444"
+                              radius={[8, 8, 0, 0]}
+                            >
+                              {Object.entries(
+                                prediction.displayData.probabilities
+                              ).map((_, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={
+                                    index === 0
+                                      ? "#10b981"
+                                      : index === 1
+                                      ? "#3b82f6"
+                                      : "#f59e0b"
+                                  }
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </>
+                    )}
 
                   {/* Overtake - Radial Progress Chart */}
                   {prediction.type === "overtake" && (
                     <>
-                      <div className="text-sm font-semibold mb-4">Overtake Success Meter</div>
+                      <div className="text-sm font-semibold mb-4">
+                        Overtake Success Meter
+                      </div>
                       <ResponsiveContainer width="100%" height={250}>
                         <RadialBarChart
                           cx="50%"
@@ -758,7 +877,12 @@ export default function PredictionsPage() {
                             {
                               name: "Overtake Probability",
                               value: prediction.displayData.confidence,
-                              fill: prediction.displayData.confidence > 70 ? "#10b981" : prediction.displayData.confidence > 40 ? "#f59e0b" : "#ef4444",
+                              fill:
+                                prediction.displayData.confidence > 70
+                                  ? "#10b981"
+                                  : prediction.displayData.confidence > 40
+                                  ? "#f59e0b"
+                                  : "#ef4444",
                             },
                           ]}
                           startAngle={180}
@@ -797,19 +921,47 @@ export default function PredictionsPage() {
                   {/* Lap Time - Comparative Chart */}
                   {prediction.type === "lap-time" && (
                     <>
-                      <div className="text-sm font-semibold mb-4">Lap Time Analysis</div>
+                      <div className="text-sm font-semibold mb-4">
+                        Lap Time Analysis
+                      </div>
                       <ResponsiveContainer width="100%" height={250}>
                         <BarChart
                           data={[
-                            { label: "Predicted", time: parseFloat(prediction.displayData.value.replace("s", "")), fill: "#10b981" },
-                            { label: "Average", time: parseFloat(prediction.displayData.value.replace("s", "")) * 1.02, fill: "#3b82f6" },
-                            { label: "Best", time: parseFloat(prediction.displayData.value.replace("s", "")) * 0.98, fill: "#f59e0b" },
+                            {
+                              label: "Predicted",
+                              time: parseFloat(
+                                prediction.displayData.value.replace("s", "")
+                              ),
+                              fill: "#10b981",
+                            },
+                            {
+                              label: "Average",
+                              time:
+                                parseFloat(
+                                  prediction.displayData.value.replace("s", "")
+                                ) * 1.02,
+                              fill: "#3b82f6",
+                            },
+                            {
+                              label: "Best",
+                              time:
+                                parseFloat(
+                                  prediction.displayData.value.replace("s", "")
+                                ) * 0.98,
+                              fill: "#f59e0b",
+                            },
                           ]}
                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#262626"
+                          />
                           <XAxis dataKey="label" stroke="#a3a3a3" />
-                          <YAxis stroke="#a3a3a3" domain={['dataMin - 1', 'dataMax + 1']} />
+                          <YAxis
+                            stroke="#a3a3a3"
+                            domain={["dataMin - 1", "dataMax + 1"]}
+                          />
                           <Tooltip
                             contentStyle={{
                               backgroundColor: "#141414",
@@ -817,11 +969,23 @@ export default function PredictionsPage() {
                               borderRadius: "8px",
                               color: "#fafafa",
                             }}
-                            formatter={(value: any) => [`${value.toFixed(3)}s`, "Time"]}
+                            formatter={(value: any) => [
+                              `${value.toFixed(3)}s`,
+                              "Time",
+                            ]}
                           />
                           <Bar dataKey="time" radius={[8, 8, 0, 0]}>
                             {[0, 1, 2].map((index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? "#10b981" : index === 1 ? "#3b82f6" : "#f59e0b"} />
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={
+                                  index === 0
+                                    ? "#10b981"
+                                    : index === 1
+                                    ? "#3b82f6"
+                                    : "#f59e0b"
+                                }
+                              />
                             ))}
                           </Bar>
                         </BarChart>
@@ -832,30 +996,66 @@ export default function PredictionsPage() {
                   {/* Tyre Degradation - Area Chart showing degradation over stint */}
                   {prediction.type === "tyre-degradation" && (
                     <>
-                      <div className="text-sm font-semibold mb-4">Degradation Curve</div>
+                      <div className="text-sm font-semibold mb-4">
+                        Degradation Curve
+                      </div>
                       <ResponsiveContainer width="100%" height={250}>
                         <AreaChart
                           data={Array.from({ length: 20 }, (_, i) => ({
                             lap: i + 1,
-                            degradation: parseFloat(prediction.displayData.value.replace("s/lap", "")) * (i + 1),
+                            degradation:
+                              parseFloat(
+                                prediction.displayData.value.replace(
+                                  "s/lap",
+                                  ""
+                                )
+                              ) *
+                              (i + 1),
                           }))}
                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         >
                           <defs>
-                            <linearGradient id="colorDeg" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                            <linearGradient
+                              id="colorDeg"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="#f59e0b"
+                                stopOpacity={0.8}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#f59e0b"
+                                stopOpacity={0.1}
+                              />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#262626"
+                          />
                           <XAxis
                             dataKey="lap"
                             stroke="#a3a3a3"
-                            label={{ value: 'Lap', position: 'insideBottom', offset: -5, fill: '#a3a3a3' }}
+                            label={{
+                              value: "Lap",
+                              position: "insideBottom",
+                              offset: -5,
+                              fill: "#a3a3a3",
+                            }}
                           />
                           <YAxis
                             stroke="#a3a3a3"
-                            label={{ value: 'Cumulative Deg (s)', angle: -90, position: 'insideLeft', fill: '#a3a3a3' }}
+                            label={{
+                              value: "Cumulative Deg (s)",
+                              angle: -90,
+                              position: "insideLeft",
+                              fill: "#a3a3a3",
+                            }}
                           />
                           <Tooltip
                             contentStyle={{
@@ -864,7 +1064,10 @@ export default function PredictionsPage() {
                               borderRadius: "8px",
                               color: "#fafafa",
                             }}
-                            formatter={(value: any) => [`${value.toFixed(3)}s`, "Degradation"]}
+                            formatter={(value: any) => [
+                              `${value.toFixed(3)}s`,
+                              "Degradation",
+                            ]}
                           />
                           <Area
                             type="monotone"
@@ -879,7 +1082,7 @@ export default function PredictionsPage() {
                             dataKey="degradation"
                             stroke="#f59e0b"
                             strokeWidth={3}
-                            dot={{ fill: '#f59e0b', r: 4 }}
+                            dot={{ fill: "#f59e0b", r: 4 }}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -892,9 +1095,12 @@ export default function PredictionsPage() {
                 <div className="w-16 h-16 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-[var(--color-primary)]" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No predictions yet</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No predictions yet
+                </h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  Select a model, fill in the form, and click &quot;Generate Prediction&quot;
+                  Select a model, fill in the form, and click &quot;Generate
+                  Prediction&quot;
                 </p>
               </div>
             )}
@@ -914,7 +1120,9 @@ export default function PredictionsPage() {
                 <span>United Arab Emirates</span>
               </div>
               <div className="bg-[var(--color-background)] rounded-lg px-3 py-2 text-center mb-4">
-                <div className="text-xs text-[var(--color-text-secondary)] mb-1">Race Completed</div>
+                <div className="text-xs text-[var(--color-text-secondary)] mb-1">
+                  Race Completed
+                </div>
                 <div className="font-semibold">Season Complete</div>
               </div>
               <div className="space-y-2 text-sm">
@@ -947,22 +1155,32 @@ export default function PredictionsPage() {
               <h4 className="font-semibold mb-4">Weather Forecast</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Condition</span>
+                  <span className="text-[var(--color-text-secondary)]">
+                    Condition
+                  </span>
                   <div className="flex items-center gap-2">
                     <span>☀️</span>
                     <span className="font-medium">Sunny</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Temperature</span>
+                  <span className="text-[var(--color-text-secondary)]">
+                    Temperature
+                  </span>
                   <span className="font-medium">28°C</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Rain Chance</span>
-                  <span className="font-medium text-[var(--color-success)]">10%</span>
+                  <span className="text-[var(--color-text-secondary)]">
+                    Rain Chance
+                  </span>
+                  <span className="font-medium text-[var(--color-success)]">
+                    10%
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-secondary)]">Track Temp</span>
+                  <span className="text-[var(--color-text-secondary)]">
+                    Track Temp
+                  </span>
                   <span className="font-medium">42°C</span>
                 </div>
               </div>
@@ -972,11 +1190,17 @@ export default function PredictionsPage() {
             <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-4">
               <h4 className="font-semibold mb-4">Track Info</h4>
               <div className="mb-4">
-                <div className="text-xs text-[var(--color-text-secondary)] mb-1">Track Type</div>
-                <div className="text-sm">High-speed circuit with long straights</div>
+                <div className="text-xs text-[var(--color-text-secondary)] mb-1">
+                  Track Type
+                </div>
+                <div className="text-sm">
+                  High-speed circuit with long straights
+                </div>
               </div>
               <div>
-                <div className="text-xs text-[var(--color-text-secondary)] mb-2">Key Factors</div>
+                <div className="text-xs text-[var(--color-text-secondary)] mb-2">
+                  Key Factors
+                </div>
                 <ul className="text-sm space-y-1">
                   <li className="flex items-start gap-2">
                     <span className="text-[var(--color-primary)]">•</span>
