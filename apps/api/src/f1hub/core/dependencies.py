@@ -7,6 +7,7 @@ Dependency injection functions for FastAPI routes.
 from typing import Generator
 
 from fastapi import Depends
+from minio import Minio
 from sqlalchemy.orm import Session
 
 from .config import Settings, get_settings
@@ -47,6 +48,31 @@ def get_settings_dependency() -> Settings:
             return {"environment": settings.ENVIRONMENT}
     """
     return get_settings()
+
+
+def get_minio_client(settings: Settings = Depends(get_settings_dependency)) -> Minio:
+    """
+    MinIO client dependency.
+
+    Returns a configured MinIO client for object storage operations.
+
+    Args:
+        settings: Application settings
+
+    Returns:
+        Minio: Configured MinIO client
+
+    Example:
+        @router.get("/files")
+        def get_files(minio: Minio = Depends(get_minio_client)):
+            return minio.list_objects("bucket")
+    """
+    return Minio(
+        settings.MINIO_ENDPOINT,
+        access_key=settings.MINIO_ROOT_USER,
+        secret_key=settings.MINIO_ROOT_PASSWORD,
+        secure=settings.MINIO_USE_SSL,
+    )
 
 
 # Placeholder for Phase 3 authentication

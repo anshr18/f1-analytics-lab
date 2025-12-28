@@ -6,7 +6,18 @@ Aggregates all API v1 routers.
 
 from fastapi import APIRouter
 
-from .v1 import drivers, features, health, ingest, laps, models, races, sessions, stints
+from .v1 import (
+    drivers,
+    features,
+    health,
+    ingest,
+    laps,
+    models,
+    predictions,
+    races,
+    sessions,
+    stints,
+)
 
 # Create main API router
 api_router = APIRouter()
@@ -23,3 +34,4 @@ api_router.include_router(drivers.router, tags=["Drivers"])
 api_router.include_router(ingest.router, tags=["Ingest"])
 api_router.include_router(features.router, tags=["Features"])
 api_router.include_router(models.router, tags=["Models"])
+api_router.include_router(predictions.router, tags=["Predictions"])
