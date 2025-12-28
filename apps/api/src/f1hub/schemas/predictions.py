@@ -52,6 +52,17 @@ class OvertakePredictionResponse(BaseModel):
     model_version: str
 
 
+class RaceResultPredictionResponse(BaseModel):
+    """Response from race result prediction."""
+
+    predicted_position: int
+    top3_probabilities: Dict[int, float]
+    grid_position: int
+    avg_lap_time: float
+    driver_id: str
+    model_version: str
+
+
 class PredictionResponse(BaseModel):
     """Generic prediction response."""
 

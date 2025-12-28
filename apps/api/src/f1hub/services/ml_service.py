@@ -234,6 +234,51 @@ class MLService:
             "model_version": "latest",
         }
 
+    def predict_race_result(
+        self,
+        grid_position: int,
+        avg_lap_time: float,
+        driver_id: str,
+    ) -> dict:
+        """Predict race finishing position.
+
+        Args:
+            grid_position: Starting position from qualifying
+            avg_lap_time: Expected average lap time (seconds)
+            driver_id: Driver identifier
+
+        Returns:
+            Dictionary with prediction results and top-3 probabilities
+        """
+        model = self.load_model("race_result", "latest")
+
+        # Prepare features using model's helper method
+        from f1hub.ml.models.race_result import RaceResultModel
+
+        if isinstance(model, RaceResultModel):
+            X = model.prepare_features(grid_position, avg_lap_time, driver_id)
+        else:
+            raise ValueError("Model does not support prepare_features method")
+
+        # Predict position (0-indexed) and probabilities
+        position_pred = model.predict(X)[0]
+        probabilities = model.predict_proba(X)[0]
+
+        # Get top 3 most likely positions with their probabilities
+        top3_indices = probabilities.argsort()[-3:][::-1]
+        top3_probs = {
+            int(idx + 1): float(probabilities[idx]) for idx in top3_indices
+        }
+
+        return {
+            "predicted_position": int(position_pred + 1),  # Convert back to 1-indexed
+            "top3_probabilities": top3_probs,
+            "grid_position": grid_position,
+            "avg_lap_time": avg_lap_time,
+            "driver_id": driver_id,
+            "model_version": "latest",
+        }
+
     def clear_cache(self):
         """Clear the model cache."""
         self._model_cache.clear()

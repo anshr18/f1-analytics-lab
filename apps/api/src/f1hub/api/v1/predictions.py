@@ -15,6 +15,7 @@ from f1hub.schemas.predictions import (
     LapTimePredictionResponse,
     OvertakePredictionResponse,
     PredictionRequest,
+    RaceResultPredictionResponse,
     TyreDegradationPredictionResponse,
 )
 from f1hub.services.ml_service import MLService
@@ -126,6 +127,40 @@ async def predict_overtake(
         )
 
         return OvertakePredictionResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
+@router.get("/race-result", response_model=RaceResultPredictionResponse)
+async def predict_race_result(
+    grid_position: int,
+    avg_lap_time: float,
+    driver_id: str,
+    db: Session = Depends(get_db),
+    minio: Minio = Depends(get_minio_client),
+) -> RaceResultPredictionResponse:
+    """Predict race finishing position.
+
+    Args:
+        grid_position: Starting position from qualifying (1-20)
+        avg_lap_time: Expected average lap time (seconds)
+        driver_id: Driver identifier
+        db: Database session
+        minio: MinIO client
+
+    Returns:
+        Prediction with finishing position and top-3 probabilities
+
+    Raises:
+        HTTPException: If model not available
+    """
+    try:
+        ml_service = MLService(db, minio)
+        result = ml_service.predict_race_result(grid_position, avg_lap_time, driver_id)
+
+        return RaceResultPredictionResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
