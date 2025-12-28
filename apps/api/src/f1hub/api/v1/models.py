@@ -16,6 +16,7 @@ from f1hub.schemas.models import (
     ModelResponse,
     ModelTrainingRequest,
     ModelTrainingResponse,
+    TaskStatusResponse,
 )
 
 router = APIRouter(prefix="/models")
@@ -84,24 +85,73 @@ async def trigger_training(
 ) -> ModelTrainingResponse:
     """Trigger async model training.
 
-    This endpoint will trigger a Celery task to train the model.
-    In Week 2, we return a placeholder response. Celery integration
-    will be added in Week 3.
-
     Args:
         request: Training request with model name and parameters
         db: Database session
 
     Returns:
         Training task information
+
+    Raises:
+        HTTPException: If model name is invalid
     """
-    # TODO: Implement Celery task in Week 3
-    # from f1hub.workers.tasks.ml import train_model_task
-    # task = train_model_task.delay(request.model_name, request.parameters)
+    from f1hub.workers.tasks.ml import (
+        train_lap_time_task,
+        train_overtake_task,
+        train_race_result_task,
+        train_tyre_degradation_task,
+    )
+
+    # Map model names to Celery tasks
+    task_map = {
+        "tyre_degradation": train_tyre_degradation_task,
+        "lap_time": train_lap_time_task,
+        "overtake": train_overtake_task,
+        "race_result": train_race_result_task,
+    }
+
+    if request.model_name not in task_map:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid model name. Must be one of: {', '.join(task_map.keys())}",
+        )
+
+    # Trigger Celery task
+    task = task_map[request.model_name].delay()
 
     return ModelTrainingResponse(
-        task_id="placeholder-task-id",
+        task_id=task.id,
         model_name=request.model_name,
         status="pending",
-        message=f"Training for {request.model_name} will be implemented in Week 3",
+        message=f"Training task started for {request.model_name}",
     )
+
+
+@router.get("/train/{task_id}", response_model=TaskStatusResponse)
+async def get_training_status(task_id: str) -> TaskStatusResponse:
+    """Get training task status.
+
+    Args:
+        task_id: Celery task ID
+
+    Returns:
+        Task status information
+    """
+    from celery.result import AsyncResult
+
+    from f1hub.workers.celery_app import celery_app
+
+    task = AsyncResult(task_id, app=celery_app)
+
+    response = TaskStatusResponse(
+        task_id=task_id,
+        status=task.state,
+        result=task.result if task.ready() else None,
+        error=str(task.info) if task.failed() else None,
+    )
+
+    # Add progress info if available
+    if task.state == "PROGRESS" and isinstance(task.info, dict):
+        response.progress = task.info.get("status")
+
+    return response

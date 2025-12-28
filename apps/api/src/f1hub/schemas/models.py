@@ -51,3 +51,13 @@ class ModelTrainingResponse(BaseModel):
     model_name: str
     status: str
     message: str
+
+
+class TaskStatusResponse(BaseModel):
+    """Response for training task status."""
+
+    task_id: str
+    status: str
+    result: Optional[Dict] = None
+    error: Optional[str] = None
+    progress: Optional[str] = None
