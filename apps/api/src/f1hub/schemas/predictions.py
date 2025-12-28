@@ -28,6 +28,30 @@ class TyreDegradationPredictionResponse(BaseModel):
     model_version: str
 
 
+class LapTimePredictionResponse(BaseModel):
+    """Response from lap time prediction."""
+
+    predicted_lap_time: float
+    tyre_age: int
+    compound: str
+    track_status: str
+    position: int
+    driver_id: str
+    model_version: str
+
+
+class OvertakePredictionResponse(BaseModel):
+    """Response from overtake probability prediction."""
+
+    overtake_probability: float
+    gap_seconds: float
+    closing_rate: float
+    tyre_advantage: int
+    drs_available: bool
+    lap_number: int
+    model_version: str
+
+
 class PredictionResponse(BaseModel):
     """Generic prediction response."""
 

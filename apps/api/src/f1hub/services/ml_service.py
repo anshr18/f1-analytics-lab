@@ -146,6 +146,94 @@ class MLService:
             "model_version": "latest",
         }
 
+    def predict_lap_time(
+        self,
+        tyre_age: int,
+        compound: str,
+        track_status: str,
+        position: int,
+        driver_id: str,
+    ) -> dict:
+        """Predict lap time for given conditions.
+
+        Args:
+            tyre_age: Laps on current tyre
+            compound: Tyre compound
+            track_status: Track status
+            position: Current position
+            driver_id: Driver identifier
+
+        Returns:
+            Dictionary with prediction results
+        """
+        model = self.load_model("lap_time", "latest")
+
+        # Prepare features using model's helper method
+        from f1hub.ml.models.lap_time import LapTimeModel
+
+        if isinstance(model, LapTimeModel):
+            X = model.prepare_features(tyre_age, compound, track_status, position, driver_id)
+        else:
+            raise ValueError("Model does not support prepare_features method")
+
+        # Predict
+        lap_time_pred = model.predict(X)[0]
+
+        return {
+            "predicted_lap_time": float(lap_time_pred),
+            "tyre_age": tyre_age,
+            "compound": compound,
+            "track_status": track_status,
+            "position": position,
+            "driver_id": driver_id,
+            "model_version": "latest",
+        }
+
+    def predict_overtake(
+        self,
+        gap_seconds: float,
+        closing_rate: float,
+        tyre_advantage: int,
+        drs_available: bool,
+        lap_number: int,
+    ) -> dict:
+        """Predict overtake probability.
+
+        Args:
+            gap_seconds: Time gap between cars
+            closing_rate: Gap change per lap
+            tyre_advantage: Compound advantage
+            drs_available: DRS availability
+            lap_number: Current lap number
+
+        Returns:
+            Dictionary with prediction results
+        """
+        model = self.load_model("overtake", "latest")
+
+        # Prepare features using model's helper method
+        from f1hub.ml.models.overtake import OvertakeModel
+
+        if isinstance(model, OvertakeModel):
+            X = model.prepare_features(
+                gap_seconds, closing_rate, tyre_advantage, drs_available, lap_number
+            )
+        else:
+            raise ValueError("Model does not support prepare_features method")
+
+        # Predict probability
+        overtake_prob = model.predict(X)[0]
+
+        return {
+            "overtake_probability": float(overtake_prob),
+            "gap_seconds": gap_seconds,
+            "closing_rate": closing_rate,
+            "tyre_advantage": tyre_advantage,
+            "drs_available": drs_available,
+            "lap_number": lap_number,
+            "model_version": "latest",
+        }
+
     def clear_cache(self):
         """Clear the model cache."""
         self._model_cache.clear()
