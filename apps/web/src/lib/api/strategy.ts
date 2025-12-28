@@ -5,7 +5,12 @@
  */
 
 import { apiPost } from "./client";
-import type { UndercutRequest, UndercutResponse } from "@/types/strategy";
+import type {
+  UndercutRequest,
+  UndercutResponse,
+  SafetyCarRequest,
+  SafetyCarResponse,
+} from "@/types/strategy";
 
 /**
  * Calculate optimal undercut/overcut strategy
@@ -14,4 +19,13 @@ export async function calculateUndercut(
   request: UndercutRequest
 ): Promise<UndercutResponse> {
   return apiPost<UndercutResponse>("/strategy/undercut", request);
+}
+
+/**
+ * Analyze safety car scenario and get pit/stay recommendations
+ */
+export async function analyzeSafetyCar(
+  request: SafetyCarRequest
+): Promise<SafetyCarResponse> {
+  return apiPost<SafetyCarResponse>("/strategy/safety-car", request);
 }

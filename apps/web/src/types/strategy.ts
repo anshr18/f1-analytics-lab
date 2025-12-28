@@ -4,6 +4,8 @@
  * TypeScript interfaces for race strategy simulation and undercut calculations.
  */
 
+// Undercut/Overcut Types
+
 /**
  * Lap-by-lap detail for strategy simulation
  */
@@ -46,4 +48,64 @@ export interface UndercutResponse {
   defender_response_lap: number;
   net_positions: Record<string, number>;
   lap_by_lap: LapDetail[];
+}
+
+// Safety Car Strategy Types
+
+/**
+ * Current state of a driver during safety car period
+ */
+export interface DriverStateInput {
+  driver_id: string;
+  position: number;
+  tyre_age: number;
+  compound: string;
+  gap_to_leader: number;
+  gap_to_next: number;
+}
+
+/**
+ * Request for safety car strategy analysis
+ */
+export interface SafetyCarRequest {
+  session_id: string;
+  safety_car_lap: number;
+  total_laps: number;
+  driver_states: DriverStateInput[];
+  track_status?: string;
+}
+
+/**
+ * Decision recommendation for a specific driver
+ */
+export interface SafetyCarDecision {
+  driver_id: string;
+  current_position: number;
+  recommendation: "PIT" | "STAY_OUT" | "RISKY";
+  predicted_position_if_pit: number;
+  predicted_position_if_stay: number;
+  position_gain_if_pit: number;
+  position_loss_if_pit: number;
+  tyre_advantage: number;
+  confidence: number;
+  reasoning: string;
+}
+
+/**
+ * Response from safety car strategy analysis
+ */
+export interface SafetyCarResponse {
+  safety_car_lap: number;
+  laps_remaining: number;
+  drivers_who_should_pit: string[];
+  drivers_who_should_stay: string[];
+  decisions: SafetyCarDecision[];
+  field_summary: {
+    total_drivers: number;
+    avg_tyre_age: number;
+    drivers_on_old_tyres: number;
+    drivers_on_fresh_tyres: number;
+    pit_window_advantage: boolean;
+    laps_remaining: number;
+  };
 }
