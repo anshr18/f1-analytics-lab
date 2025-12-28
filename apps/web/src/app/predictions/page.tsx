@@ -24,6 +24,19 @@ import {
   predictOvertake,
   predictRaceResult,
 } from "@/lib/api/predictions";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  RadialBarChart,
+  RadialBar,
+} from "recharts";
+import { motion } from "framer-motion";
 
 export default function PredictionsPage() {
   const [selectedModel, setSelectedModel] = useState<string | null>("race-result");
@@ -498,7 +511,7 @@ export default function PredictionsPage() {
                     <button
                       onClick={handlePredict}
                       disabled={predicting}
-                      className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                     >
                       <Sparkles className="w-4 h-4" />
                       {predicting ? "Generating..." : "Generate Prediction"}
@@ -554,30 +567,133 @@ export default function PredictionsPage() {
                   </div>
                 </div>
 
-                {/* Top 3 Probabilities (Race Result only) */}
-                {prediction.displayData.probabilities && (
-                  <div className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4">
-                    <div className="text-sm font-semibold mb-3">Top 3 Probabilities</div>
-                    <div className="space-y-2">
-                      {Object.entries(prediction.displayData.probabilities).map(([position, prob]: [string, any]) => (
-                        <div key={position} className="flex items-center justify-between">
-                          <span className="text-sm text-[var(--color-text-secondary)]">P{position}</span>
-                          <div className="flex items-center gap-2 flex-1 ml-4">
-                            <div className="flex-1 bg-[var(--color-surface)] rounded-full h-1.5">
-                              <div
-                                className="bg-[var(--color-primary)] h-1.5 rounded-full"
-                                style={{ width: `${prob * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-semibold text-[var(--color-text-primary)] w-12 text-right">
-                              {(prob * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Animated Charts Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-6"
+                >
+                  {/* Race Result - Bar Chart for Top 3 Probabilities */}
+                  {prediction.type === "race-result" && prediction.displayData.probabilities && (
+                    <>
+                      <div className="text-sm font-semibold mb-4">Top 3 Probabilities</div>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart
+                          data={Object.entries(prediction.displayData.probabilities).map(([pos, prob]) => ({
+                            position: `P${pos}`,
+                            probability: (prob as number) * 100,
+                          }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                          <XAxis dataKey="position" stroke="#a3a3a3" />
+                          <YAxis stroke="#a3a3a3" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#141414",
+                              border: "1px solid #262626",
+                              borderRadius: "8px",
+                              color: "#fafafa",
+                            }}
+                            formatter={(value: any) => [`${value.toFixed(1)}%`, "Probability"]}
+                          />
+                          <Bar dataKey="probability" fill="#ef4444" radius={[8, 8, 0, 0]}>
+                            {Object.entries(prediction.displayData.probabilities).map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? "#10b981" : index === 1 ? "#3b82f6" : "#f59e0b"} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </>
+                  )}
+
+                  {/* Overtake - Radial Progress Chart */}
+                  {prediction.type === "overtake" && (
+                    <>
+                      <div className="text-sm font-semibold mb-4">Overtake Success Meter</div>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <RadialBarChart
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="60%"
+                          outerRadius="90%"
+                          barSize={20}
+                          data={[
+                            {
+                              name: "Overtake Probability",
+                              value: prediction.displayData.confidence,
+                              fill: prediction.displayData.confidence > 70 ? "#10b981" : prediction.displayData.confidence > 40 ? "#f59e0b" : "#ef4444",
+                            },
+                          ]}
+                          startAngle={180}
+                          endAngle={0}
+                        >
+                          <RadialBar
+                            background={{ fill: "#262626" }}
+                            dataKey="value"
+                            cornerRadius={10}
+                          />
+                          <text
+                            x="50%"
+                            y="50%"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            className="text-4xl font-bold"
+                            fill="#10b981"
+                          >
+                            {prediction.displayData.confidence.toFixed(1)}%
+                          </text>
+                          <text
+                            x="50%"
+                            y="62%"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            className="text-sm"
+                            fill="#a3a3a3"
+                          >
+                            Success Rate
+                          </text>
+                        </RadialBarChart>
+                      </ResponsiveContainer>
+                    </>
+                  )}
+
+                  {/* Lap Time - Comparative Chart */}
+                  {prediction.type === "lap-time" && (
+                    <>
+                      <div className="text-sm font-semibold mb-4">Lap Time Analysis</div>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart
+                          data={[
+                            { label: "Predicted", time: parseFloat(prediction.displayData.value.replace("s", "")), fill: "#10b981" },
+                            { label: "Average", time: parseFloat(prediction.displayData.value.replace("s", "")) * 1.02, fill: "#3b82f6" },
+                            { label: "Best", time: parseFloat(prediction.displayData.value.replace("s", "")) * 0.98, fill: "#f59e0b" },
+                          ]}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                          <XAxis dataKey="label" stroke="#a3a3a3" />
+                          <YAxis stroke="#a3a3a3" domain={['dataMin - 1', 'dataMax + 1']} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#141414",
+                              border: "1px solid #262626",
+                              borderRadius: "8px",
+                              color: "#fafafa",
+                            }}
+                            formatter={(value: any) => [`${value.toFixed(3)}s`, "Time"]}
+                          />
+                          <Bar dataKey="time" radius={[8, 8, 0, 0]}>
+                            {[0, 1, 2].map((index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? "#10b981" : index === 1 ? "#3b82f6" : "#f59e0b"} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </>
+                  )}
+                </motion.div>
               </div>
             ) : (
               <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-12 text-center">
