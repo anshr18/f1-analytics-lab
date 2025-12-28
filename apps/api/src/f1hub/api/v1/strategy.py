@@ -8,8 +8,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from f1hub.core.dependencies import get_db
-from f1hub.schemas.strategy import UndercutRequest, UndercutResponse
-from f1hub.services.strategy import PitStrategyService
+from f1hub.schemas.strategy import (
+    UndercutRequest,
+    UndercutResponse,
+    SafetyCarRequest,
+    SafetyCarResponse,
+    DriverStateInput,
+)
+from f1hub.services.strategy import PitStrategyService, SafetyCarStrategyService
+from f1hub.services.strategy.safety_car import DriverState
 
 router = APIRouter(prefix="/strategy")
 
@@ -64,4 +71,80 @@ async def calculate_undercut(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to calculate undercut strategy: {str(e)}"
+        )
+
+
+@router.post("/safety-car", response_model=SafetyCarResponse)
+async def analyze_safety_car(
+    request: SafetyCarRequest,
+    db: Session = Depends(get_db),
+) -> SafetyCarResponse:
+    """
+    Analyze safety car scenario and recommend pit strategies.
+
+    Helps teams make split-second decisions during safety car periods:
+    - Should each driver pit or stay out?
+    - What positions will they gain/lose?
+    - What tire advantage will they have?
+    - What is the confidence in each recommendation?
+
+    Args:
+        request: Safety car scenario parameters
+        db: Database session
+
+    Returns:
+        Safety car analysis with recommendations for all drivers
+
+    Raises:
+        HTTPException: If analysis fails
+    """
+    try:
+        strategy_service = SafetyCarStrategyService(db)
+
+        # Convert Pydantic models to dataclass
+        driver_states = [
+            DriverState(
+                driver_id=d.driver_id,
+                position=d.position,
+                tyre_age=d.tyre_age,
+                compound=d.compound,
+                gap_to_leader=d.gap_to_leader,
+                gap_to_next=d.gap_to_next,
+            )
+            for d in request.driver_states
+        ]
+
+        result = strategy_service.analyze_safety_car_scenario(
+            session_id=request.session_id,
+            safety_car_lap=request.safety_car_lap,
+            total_laps=request.total_laps,
+            driver_states=driver_states,
+            track_status=request.track_status,
+        )
+
+        return SafetyCarResponse(
+            safety_car_lap=result.safety_car_lap,
+            laps_remaining=result.laps_remaining,
+            drivers_who_should_pit=result.drivers_who_should_pit,
+            drivers_who_should_stay=result.drivers_who_should_stay,
+            decisions=[
+                {
+                    "driver_id": d.driver_id,
+                    "current_position": d.current_position,
+                    "recommendation": d.recommendation,
+                    "predicted_position_if_pit": d.predicted_position_if_pit,
+                    "predicted_position_if_stay": d.predicted_position_if_stay,
+                    "position_gain_if_pit": d.position_gain_if_pit,
+                    "position_loss_if_pit": d.position_loss_if_pit,
+                    "tyre_advantage": d.tyre_advantage,
+                    "confidence": d.confidence,
+                    "reasoning": d.reasoning,
+                }
+                for d in result.decisions
+            ],
+            field_summary=result.field_summary,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to analyze safety car scenario: {str(e)}"
         )

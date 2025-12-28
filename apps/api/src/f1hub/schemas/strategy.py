@@ -5,7 +5,7 @@ Pydantic models for strategy simulation requests and responses.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 
 class UndercutRequest(BaseModel):
@@ -85,5 +85,117 @@ class UndercutResponse(BaseModel):
                         "defender_tyre_age": 12,
                     }
                 ],
+            }
+        }
+
+
+# Safety Car Strategy Schemas
+
+
+class DriverStateInput(BaseModel):
+    """Current state of a driver during safety car period"""
+
+    driver_id: str = Field(..., description="Driver identifier (e.g., 'VER')")
+    position: int = Field(..., ge=1, le=20, description="Current race position")
+    tyre_age: int = Field(..., ge=0, description="Current tyre age in laps")
+    compound: str = Field(..., description="Current tyre compound")
+    gap_to_leader: float = Field(..., ge=0, description="Gap to race leader in seconds")
+    gap_to_next: float = Field(..., ge=0, description="Gap to car ahead in seconds")
+
+
+class SafetyCarRequest(BaseModel):
+    """Request for safety car strategy analysis"""
+
+    session_id: str = Field(..., description="Session ID for context")
+    safety_car_lap: int = Field(..., ge=1, description="Lap when safety car was deployed")
+    total_laps: int = Field(..., ge=1, description="Total race laps")
+    driver_states: List[DriverStateInput] = Field(
+        ..., min_length=2, description="Current state of all drivers"
+    )
+    track_status: str = Field(default="SC", description="Track status (SC or VSC)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "session_id": "session_123",
+                "safety_car_lap": 35,
+                "total_laps": 57,
+                "track_status": "SC",
+                "driver_states": [
+                    {
+                        "driver_id": "VER",
+                        "position": 1,
+                        "tyre_age": 18,
+                        "compound": "MEDIUM",
+                        "gap_to_leader": 0.0,
+                        "gap_to_next": 0.0,
+                    },
+                    {
+                        "driver_id": "LEC",
+                        "position": 2,
+                        "tyre_age": 15,
+                        "compound": "MEDIUM",
+                        "gap_to_leader": 2.5,
+                        "gap_to_next": 2.5,
+                    },
+                ],
+            }
+        }
+
+
+class SafetyCarDecisionOutput(BaseModel):
+    """Decision recommendation for a specific driver"""
+
+    driver_id: str
+    current_position: int
+    recommendation: str = Field(..., description="PIT, STAY_OUT, or RISKY")
+    predicted_position_if_pit: int
+    predicted_position_if_stay: int
+    position_gain_if_pit: int
+    position_loss_if_pit: int
+    tyre_advantage: int = Field(..., description="Laps fresher than average if pit")
+    confidence: float = Field(..., ge=0, le=1, description="Confidence in recommendation")
+    reasoning: str = Field(..., description="Human-readable reasoning")
+
+
+class SafetyCarResponse(BaseModel):
+    """Response from safety car strategy analysis"""
+
+    safety_car_lap: int
+    laps_remaining: int
+    drivers_who_should_pit: List[str]
+    drivers_who_should_stay: List[str]
+    decisions: List[SafetyCarDecisionOutput]
+    field_summary: Dict[str, Any]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "safety_car_lap": 35,
+                "laps_remaining": 22,
+                "drivers_who_should_pit": ["VER", "PER"],
+                "drivers_who_should_stay": ["LEC", "NOR"],
+                "decisions": [
+                    {
+                        "driver_id": "VER",
+                        "current_position": 1,
+                        "recommendation": "PIT",
+                        "predicted_position_if_pit": 3,
+                        "predicted_position_if_stay": 1,
+                        "position_gain_if_pit": 0,
+                        "position_loss_if_pit": 2,
+                        "tyre_advantage": 15,
+                        "confidence": 0.85,
+                        "reasoning": "Old tires (18 laps) with long race remaining",
+                    }
+                ],
+                "field_summary": {
+                    "total_drivers": 20,
+                    "avg_tyre_age": 12.5,
+                    "drivers_on_old_tyres": 6,
+                    "drivers_on_fresh_tyres": 2,
+                    "pit_window_advantage": True,
+                    "laps_remaining": 22,
+                },
             }
         }
