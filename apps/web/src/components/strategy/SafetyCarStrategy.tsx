@@ -32,6 +32,7 @@ import {
   Legend,
 } from "recharts";
 import { motion } from "framer-motion";
+import PositionFlowChart from "./PositionFlowChart";
 
 interface SafetyCarStrategyProps {
   sessionId: string;
@@ -514,6 +515,20 @@ export default function SafetyCarStrategy({ sessionId }: SafetyCarStrategyProps)
               })}
             </div>
           </div>
+
+          {/* Position Flow Visualization */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <TrendingUp className="w-5 h-5 text-[var(--color-primary)]" />
+              <h3 className="text-lg font-semibold">Position Flow (If All Pit)</h3>
+            </div>
+            <PositionFlowChart decisions={result.decisions} />
+          </motion.div>
 
           {/* Recommendation Distribution Chart */}
           <motion.div
