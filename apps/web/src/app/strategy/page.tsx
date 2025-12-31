@@ -44,8 +44,11 @@ import {
   ReferenceLine,
 } from "recharts";
 import { motion } from "framer-motion";
+import SafetyCarStrategy from "@/components/strategy/SafetyCarStrategy";
+import { Shield } from "lucide-react";
 
 export default function StrategyPage() {
+  const [activeTab, setActiveTab] = useState<"undercut" | "safety-car">("undercut");
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState<UndercutResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -214,21 +217,64 @@ export default function StrategyPage() {
         </div>
       </div>
 
+      {/* Strategy Tabs */}
+      <div className="border-b border-[var(--color-border)]">
+        <div className="flex gap-1 px-6">
+          <button
+            onClick={() => setActiveTab("undercut")}
+            className={`
+              flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+              ${
+                activeTab === "undercut"
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }
+            `}
+          >
+            <Zap className="w-4 h-4" />
+            <span>Undercut Predictor</span>
+            {activeTab === "undercut" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("safety-car")}
+            className={`
+              flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+              ${
+                activeTab === "safety-car"
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }
+            `}
+          >
+            <Shield className="w-4 h-4" />
+            <span>Safety Car Strategy</span>
+            {activeTab === "safety-car" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="p-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - Strategy Info */}
-          <div className="col-span-3 space-y-4">
-            {/* Strategy Type Card */}
-            <div className="bg-[var(--color-surface)] rounded-xl border-2 border-[var(--color-primary)] p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-3 rounded-lg bg-purple-500">
-                  <Zap className="w-6 h-6 text-white" />
+        {activeTab === "safety-car" ? (
+          <SafetyCarStrategy sessionId={sessionId} />
+        ) : (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - Strategy Info */}
+            <div className="col-span-3 space-y-4">
+              {/* Strategy Type Card */}
+              <div className="bg-[var(--color-surface)] rounded-xl border-2 border-[var(--color-primary)] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-3 rounded-lg bg-purple-500">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-base font-semibold mt-3 mb-2">
-                Undercut/Overcut Predictor
-              </h3>
+                <h3 className="text-base font-semibold mt-3 mb-2">
+                  Undercut/Overcut Predictor
+                </h3>
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-3">
                 Simulates pit stop scenarios to determine optimal timing for
                 undercut attempts
@@ -1015,6 +1061,7 @@ export default function StrategyPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
