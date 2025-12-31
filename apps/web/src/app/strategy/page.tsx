@@ -45,10 +45,11 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import SafetyCarStrategy from "@/components/strategy/SafetyCarStrategy";
+import RaceSimulation from "@/components/strategy/RaceSimulation";
 import { Shield } from "lucide-react";
 
 export default function StrategyPage() {
-  const [activeTab, setActiveTab] = useState<"undercut" | "safety-car">("undercut");
+  const [activeTab, setActiveTab] = useState<"undercut" | "safety-car" | "race-sim">("undercut");
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState<UndercutResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -254,12 +255,31 @@ export default function StrategyPage() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab("race-sim")}
+            className={`
+              flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+              ${
+                activeTab === "race-sim"
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }
+            `}
+          >
+            <Flag className="w-4 h-4" />
+            <span>Race Simulation</span>
+            {activeTab === "race-sim" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+            )}
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="p-6">
-        {activeTab === "safety-car" ? (
+        {activeTab === "race-sim" ? (
+          <RaceSimulation sessionId={sessionId} />
+        ) : activeTab === "safety-car" ? (
           <SafetyCarStrategy sessionId={sessionId} />
         ) : (
           <div className="grid grid-cols-12 gap-6">

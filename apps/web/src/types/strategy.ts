@@ -109,3 +109,30 @@ export interface SafetyCarResponse {
     laps_remaining: number;
   };
 }
+
+// Race Simulation Types
+
+/**
+ * Request for complete race simulation
+ */
+export interface RaceSimulationRequest {
+  session_id: string;
+  total_laps: number;
+  drivers: string[];
+  pit_strategies: Record<string, number[]>;
+}
+
+/**
+ * Response from race simulation
+ */
+export interface RaceSimulationResponse {
+  final_classification: Record<string, number>;
+  lap_by_lap_positions: Record<string, number>[];
+  total_pit_stops: Record<string, number>;
+  fastest_lap: {
+    driver: string;
+    lap: number;
+    time?: number;
+  };
+  summary: string;
+}

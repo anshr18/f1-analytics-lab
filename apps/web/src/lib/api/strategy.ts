@@ -10,6 +10,8 @@ import type {
   UndercutResponse,
   SafetyCarRequest,
   SafetyCarResponse,
+  RaceSimulationRequest,
+  RaceSimulationResponse,
 } from "@/types/strategy";
 
 /**
@@ -28,4 +30,13 @@ export async function analyzeSafetyCar(
   request: SafetyCarRequest
 ): Promise<SafetyCarResponse> {
   return apiPost<SafetyCarResponse>("/strategy/safety-car", request);
+}
+
+/**
+ * Simulate complete race with pit strategies
+ */
+export async function simulateRace(
+  request: RaceSimulationRequest
+): Promise<RaceSimulationResponse> {
+  return apiPost<RaceSimulationResponse>("/strategy/race-simulation", request);
 }
