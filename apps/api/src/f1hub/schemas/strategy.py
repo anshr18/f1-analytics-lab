@@ -199,3 +199,27 @@ class SafetyCarResponse(BaseModel):
                 },
             }
         }
+
+
+# Race Simulation Schemas
+
+
+class RaceSimulationRequest(BaseModel):
+    """Request for complete race simulation"""
+
+    session_id: str = Field(..., description="Session ID for context")
+    total_laps: int = Field(..., ge=1, description="Total race laps")
+    drivers: List[str] = Field(..., min_length=2, description="List of driver IDs")
+    pit_strategies: Dict[str, List[int]] = Field(
+        ..., description="Pit stop laps for each driver (driver_id -> [lap1, lap2, ...])"
+    )
+
+
+class RaceSimulationResponse(BaseModel):
+    """Response from race simulation"""
+
+    final_classification: Dict[str, int]
+    lap_by_lap_positions: List[Dict[str, int]]
+    total_pit_stops: Dict[str, int]
+    fastest_lap: Dict[str, Any]
+    summary: str

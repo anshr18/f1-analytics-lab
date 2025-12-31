@@ -14,8 +14,10 @@ from f1hub.schemas.strategy import (
     SafetyCarRequest,
     SafetyCarResponse,
     DriverStateInput,
+    RaceSimulationRequest,
+    RaceSimulationResponse,
 )
-from f1hub.services.strategy import PitStrategyService, SafetyCarStrategyService
+from f1hub.services.strategy import PitStrategyService, SafetyCarStrategyService, RaceSimulationEngine
 from f1hub.services.strategy.safety_car import DriverState
 
 router = APIRouter(prefix="/strategy")
@@ -147,4 +149,47 @@ async def analyze_safety_car(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to analyze safety car scenario: {str(e)}"
+        )
+
+
+@router.post("/race-simulation", response_model=RaceSimulationResponse)
+async def simulate_race(
+    request: RaceSimulationRequest,
+    db: Session = Depends(get_db),
+) -> RaceSimulationResponse:
+    """
+    Simulate complete race with pit strategies.
+
+    Models an entire race from start to finish with given pit stop strategies.
+    Tracks position changes lap-by-lap.
+
+    Args:
+        request: Race simulation parameters
+        db: Database session
+
+    Returns:
+        Complete race simulation with final classification
+
+    Raises:
+        HTTPException: If simulation fails
+    """
+    try:
+        engine = RaceSimulationEngine(db)
+        result = engine.simulate_race(
+            session_id=request.session_id,
+            total_laps=request.total_laps,
+            drivers=request.drivers,
+            pit_strategies=request.pit_strategies,
+        )
+
+        return RaceSimulationResponse(
+            final_classification=result.final_classification,
+            lap_by_lap_positions=result.lap_by_lap_positions,
+            total_pit_stops=result.total_pit_stops,
+            fastest_lap=result.fastest_lap,
+            summary=result.summary,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to simulate race: {str(e)}"
         )
