@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Target, BarChart3, Gamepad2, MessageSquare } from "lucide-react";
+import { BarChart3, Target, Gamepad2, MessageSquare, Radio } from "lucide-react";
 import { RacePicker } from "@/components/RacePicker";
 import { LapChart } from "@/components/charts/LapChart";
 import { StintChart } from "@/components/charts/StintChart";
@@ -12,34 +12,11 @@ export default function DashboardPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const navItems = [
-    {
-      id: "predictions",
-      label: "ML Predictions",
-      icon: Target,
-      href: "/predictions",
-      active: false,
-    },
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: BarChart3,
-      href: "/dashboard",
-      active: true,
-    },
-    {
-      id: "strategy",
-      label: "Strategy Simulator",
-      icon: Gamepad2,
-      href: "/strategy",
-      active: false,
-    },
-    {
-      id: "assistant",
-      label: "AI Assistant",
-      icon: MessageSquare,
-      href: "/assistant",
-      active: false,
-    },
+    { id: "predictions", label: "ML Predictions", icon: Target, href: "/predictions", active: false },
+    { id: "dashboard", label: "Dashboard", icon: BarChart3, href: "/dashboard", active: true },
+    { id: "strategy", label: "Strategy Simulator", icon: Gamepad2, href: "/strategy", active: false },
+    { id: "live", label: "Live Timing", icon: Radio, href: "/live", active: false },
+    { id: "assistant", label: "AI Assistant", icon: MessageSquare, href: "/assistant", active: false },
   ];
 
   return (
@@ -54,16 +31,18 @@ export default function DashboardPage() {
                 key={item.id}
                 href={item.href}
                 className={`
-                  flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+                  relative px-4 py-3 text-sm font-medium transition-colors rounded-t-lg
                   ${
                     item.active
-                      ? "text-[var(--color-primary)]"
-                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                      ? "text-[var(--color-primary)] bg-[var(--color-background)]"
+                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface)]"
                   }
                 `}
               >
-                <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </div>
                 {item.active && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
                 )}

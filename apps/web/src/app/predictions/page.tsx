@@ -10,6 +10,7 @@ import {
   BarChart3,
   Gamepad2,
   MessageSquare,
+  Radio,
   Sparkles,
   MapPin,
   CalendarDays,
@@ -99,6 +100,13 @@ export default function PredictionsPage() {
       label: "Strategy Simulator",
       icon: Gamepad2,
       href: "/strategy",
+      active: false,
+    },
+    {
+      id: "live",
+      label: "Live Timing",
+      icon: Radio,
+      href: "/live",
       active: false,
     },
     {
@@ -319,26 +327,29 @@ export default function PredictionsPage() {
         <div className="flex gap-1 px-6 pt-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`
-                  flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
-                  ${
-                    item.active
-                      ? "text-[var(--color-primary)]"
-                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                  }
-                `}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.label}</span>
-                {item.active && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
-                )}
-              </Link>
-            );
+            if (item.href) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={`
+                    flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+                    ${
+                      item.active
+                        ? "text-[var(--color-primary)]"
+                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                    }
+                  `}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                  {item.active && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+                  )}
+                </Link>
+              );
+            }
+            return null;
           })}
         </div>
       </div>
