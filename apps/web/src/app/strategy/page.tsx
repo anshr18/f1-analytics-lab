@@ -193,17 +193,15 @@ export default function StrategyPage() {
               return (
                 <Link
                   key={item.id}
-                  href={item.disabled ? "#" : item.href}
+                  href={item.href}
                   className={`
                     flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
-                    ${item.disabled ? "opacity-40 cursor-not-allowed" : ""}
                     ${
                       item.active
                         ? "text-[var(--color-primary)]"
                         : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                     }
                   `}
-                  onClick={(e) => item.disabled && e.preventDefault()}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
