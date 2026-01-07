@@ -35,6 +35,7 @@ export interface EventListResponse {
 
 // Session
 export interface Session extends TimestampFields {
+  location: string;
   id: string;
   event_id: string;
   session_type: string;
