@@ -11,7 +11,7 @@ from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, St
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from ...db.base import Base
 
 
 class LiveSession(Base):
@@ -24,17 +24,18 @@ class LiveSession(Base):
         PGUUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, unique=True
     )
     is_active = Column(Boolean, nullable=False, default=True)
+    openf1_session_key = Column(String(100), nullable=False)  # OpenF1 API session key
     started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    stopped_at = Column(DateTime, nullable=True)
+    ended_at = Column(DateTime, nullable=True)
     current_lap = Column(Integer, nullable=True)
     session_status = Column(String(50), nullable=True)  # 'Started', 'Aborted', 'Finished'
     track_status = Column(String(50), nullable=True)  # 'AllClear', 'Yellow', 'Red', 'SCDeployed'
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    session = relationship("Session", back_populates="live_session")
+    session = relationship("Session")
     timing_data = relationship("LiveTiming", back_populates="live_session", cascade="all, delete-orphan")
     events = relationship("LiveEvent", back_populates="live_session", cascade="all, delete-orphan")
     connections = relationship("WebSocketConnection", back_populates="live_session", cascade="all, delete-orphan")
@@ -49,7 +50,7 @@ class LiveTiming(Base):
     live_session_id = Column(
         PGUUID(as_uuid=True), ForeignKey("live_sessions.id", ondelete="CASCADE"), nullable=False
     )
-    driver_id = Column(String(3), ForeignKey("drivers.abbreviation", ondelete="CASCADE"), nullable=False)
+    driver_number = Column(Integer, nullable=False)  # OpenF1 uses driver numbers
     lap_number = Column(Integer, nullable=False)
     position = Column(Integer, nullable=False)
     gap_to_leader = Column(Float, nullable=True)  # seconds
@@ -63,11 +64,10 @@ class LiveTiming(Base):
     tyre_age = Column(Integer, nullable=True)
     in_pit = Column(Boolean, nullable=False, default=False)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
     live_session = relationship("LiveSession", back_populates="timing_data")
-    driver = relationship("Driver")
 
 
 class LiveEvent(Base):
@@ -81,7 +81,7 @@ class LiveEvent(Base):
     )
     event_type = Column(String(50), nullable=False)  # 'pit_stop', 'fastest_lap', 'overtake', 'incident'
     lap_number = Column(Integer, nullable=False)
-    driver_id = Column(String(3), ForeignKey("drivers.abbreviation", ondelete="CASCADE"), nullable=True)
+    driver_number = Column(Integer, nullable=True)  # OpenF1 uses driver numbers, nullable for non-driver events
     description = Column(Text, nullable=True)
     severity = Column(String(20), nullable=True)  # 'info', 'warning', 'critical'
     data = Column(JSONB, nullable=False, default=dict)
@@ -89,7 +89,6 @@ class LiveEvent(Base):
 
     # Relationships
     live_session = relationship("LiveSession", back_populates="events")
-    driver = relationship("Driver")
 
 
 class WebSocketConnection(Base):
@@ -105,7 +104,7 @@ class WebSocketConnection(Base):
     user_id = Column(String(100), nullable=True)
     connected_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     disconnected_at = Column(DateTime, nullable=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_data = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
     live_session = relationship("LiveSession", back_populates="connections")

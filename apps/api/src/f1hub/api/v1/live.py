@@ -1,116 +1,30 @@
 """
 Live Streaming API Endpoints
 
-FastAPI endpoints for live F1 data streaming via WebSockets.
+FastAPI endpoints for live F1 data streaming.
+WebSocket functionality will be added later.
 """
 
 from typing import Optional
 from uuid import UUID
+import logging
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
-from loguru import logger
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session as DBSession
 
-from f1hub.db.dependencies import get_db_session
-from f1hub.db.models import LiveEvent, LiveSession, LiveTiming, Session
-from f1hub.services.live import LiveTimingService, WebSocketManager
+from ...core.dependencies import get_db
+from ...db.models import LiveEvent, LiveSession, LiveTiming, Session
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/live", tags=["live"])
 
-# Global WebSocket manager instance
-ws_manager: Optional[WebSocketManager] = None
-
-
-async def get_ws_manager() -> WebSocketManager:
-    """Dependency to get WebSocket manager."""
-    global ws_manager
-    if ws_manager is None:
-        ws_manager = WebSocketManager()
-        await ws_manager.initialize()
-    return ws_manager
-
-
-@router.on_event("startup")
-async def startup_event():
-    """Initialize WebSocket manager on startup."""
-    global ws_manager
-    ws_manager = WebSocketManager()
-    await ws_manager.initialize()
-    logger.info("WebSocket manager initialized")
-
-
-@router.on_event("shutdown")
-async def shutdown_event():
-    """Close WebSocket manager on shutdown."""
-    global ws_manager
-    if ws_manager:
-        await ws_manager.close()
-    logger.info("WebSocket manager closed")
-
-
-@router.websocket("/ws/{session_id}")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    session_id: UUID,
-    db: AsyncSession = Depends(get_db_session),
-):
-    """
-    WebSocket endpoint for live timing updates.
-
-    Args:
-        session_id: F1Hub session UUID to subscribe to
-    """
-    await websocket.accept()
-    connection_id = None
-
-    try:
-        # Verify session exists
-        session = await db.get(Session, session_id)
-        if not session:
-            await websocket.send_json({"type": "error", "message": "Session not found"})
-            await websocket.close()
-            return
-
-        # Register connection
-        manager = await get_ws_manager()
-        connection_id = await manager.register(websocket, str(session_id))
-
-        logger.info(f"WebSocket connected: {connection_id} for session {session_id}")
-
-        # Send initial connection success message
-        await websocket.send_json(
-            {
-                "type": "connected",
-                "connection_id": connection_id,
-                "session_id": str(session_id),
-                "message": "Connected to live timing",
-            }
-        )
-
-        # Keep connection alive and handle incoming messages
-        while True:
-            data = await websocket.receive_json()
-
-            # Handle ping/pong
-            if data.get("type") == "ping":
-                await websocket.send_json({"type": "pong"})
-
-    except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected: {connection_id}")
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-    finally:
-        if connection_id:
-            manager = await get_ws_manager()
-            await manager.unregister(connection_id, str(session_id))
-
 
 @router.post("/sessions/start", status_code=status.HTTP_201_CREATED)
-async def start_live_session(
+def start_live_session(
     session_id: UUID,
     openf1_session_key: str,
-    db: AsyncSession = Depends(get_db_session),
+    db: DBSession = Depends(get_db),
 ):
     """
     Start a live streaming session.
@@ -123,34 +37,57 @@ async def start_live_session(
         LiveSession: Created live session
     """
     # Verify session exists
-    session = await db.get(Session, session_id)
+    session = db.query(Session).filter(Session.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Create live timing service
-    manager = await get_ws_manager()
-    live_service = LiveTimingService(db, manager)
+    # Check if live session already exists
+    existing = db.query(LiveSession).filter(
+        LiveSession.session_id == session_id,
+        LiveSession.is_active == True
+    ).first()
 
-    try:
-        live_session = await live_service.start_live_session(session_id, openf1_session_key)
+    if existing:
         return {
-            "id": str(live_session.id),
-            "session_id": str(live_session.session_id),
-            "is_active": live_session.is_active,
-            "openf1_session_key": live_session.openf1_session_key,
-            "current_lap": live_session.current_lap,
-            "session_status": live_session.session_status,
-            "track_status": live_session.track_status,
+            "id": str(existing.id),
+            "session_id": str(existing.session_id),
+            "is_active": existing.is_active,
+            "openf1_session_key": existing.openf1_session_key,
+            "current_lap": existing.current_lap,
+            "session_status": existing.session_status,
+            "track_status": existing.track_status,
         }
-    except Exception as e:
-        logger.error(f"Error starting live session: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
+    # Create new live session
+    live_session = LiveSession(
+        session_id=session_id,
+        openf1_session_key=openf1_session_key,
+        is_active=True,
+        session_status="Started",
+        track_status="Unknown",
+    )
+
+    db.add(live_session)
+    db.commit()
+    db.refresh(live_session)
+
+    logger.info(f"Started live session {live_session.id} for session {session_id}")
+
+    return {
+        "id": str(live_session.id),
+        "session_id": str(live_session.session_id),
+        "is_active": live_session.is_active,
+        "openf1_session_key": live_session.openf1_session_key,
+        "current_lap": live_session.current_lap,
+        "session_status": live_session.session_status,
+        "track_status": live_session.track_status,
+    }
 
 
 @router.post("/sessions/{live_session_id}/stop")
-async def stop_live_session(
+def stop_live_session(
     live_session_id: UUID,
-    db: AsyncSession = Depends(get_db_session),
+    db: DBSession = Depends(get_db),
 ):
     """
     Stop a live streaming session.
@@ -161,28 +98,28 @@ async def stop_live_session(
     Returns:
         Success message
     """
-    manager = await get_ws_manager()
-    live_service = LiveTimingService(db, manager)
+    live_session = db.query(LiveSession).filter(LiveSession.id == live_session_id).first()
+    if not live_session:
+        raise HTTPException(status_code=404, detail="Live session not found")
 
-    try:
-        await live_service.stop_live_session(live_session_id)
-        return {"message": "Live session stopped", "live_session_id": str(live_session_id)}
-    except Exception as e:
-        logger.error(f"Error stopping live session: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    live_session.is_active = False
+    live_session.ended_at = None  # Will be set by database default
+    db.commit()
+
+    logger.info(f"Stopped live session {live_session_id}")
+
+    return {"message": "Live session stopped", "live_session_id": str(live_session_id)}
 
 
 @router.get("/sessions/active")
-async def get_active_sessions(db: AsyncSession = Depends(get_db_session)):
+def get_active_sessions(db: DBSession = Depends(get_db)):
     """
     Get all active live sessions.
 
     Returns:
         List of active LiveSession records
     """
-    stmt = select(LiveSession).where(LiveSession.is_active == True)
-    result = await db.execute(stmt)
-    sessions = result.scalars().all()
+    sessions = db.query(LiveSession).filter(LiveSession.is_active == True).all()
 
     return [
         {
@@ -193,17 +130,17 @@ async def get_active_sessions(db: AsyncSession = Depends(get_db_session)):
             "current_lap": session.current_lap,
             "session_status": session.session_status,
             "track_status": session.track_status,
-            "started_at": session.created_at.isoformat(),
+            "started_at": session.created_at.isoformat() if session.created_at else None,
         }
         for session in sessions
     ]
 
 
 @router.get("/sessions/{live_session_id}/timing")
-async def get_live_timing(
+def get_live_timing(
     live_session_id: UUID,
     limit: int = 100,
-    db: AsyncSession = Depends(get_db_session),
+    db: DBSession = Depends(get_db),
 ):
     """
     Get recent timing data for a live session.
@@ -215,15 +152,13 @@ async def get_live_timing(
     Returns:
         List of LiveTiming records
     """
-    stmt = (
-        select(LiveTiming)
-        .where(LiveTiming.live_session_id == live_session_id)
-        .order_by(LiveTiming.created_at.desc())
+    timing_data = (
+        db.query(LiveTiming)
+        .filter(LiveTiming.live_session_id == live_session_id)
+        .order_by(LiveTiming.timestamp.desc())
         .limit(limit)
+        .all()
     )
-
-    result = await db.execute(stmt)
-    timing_data = result.scalars().all()
 
     return [
         {
@@ -236,18 +171,18 @@ async def get_live_timing(
             "sector1_time": t.sector1_time,
             "sector2_time": t.sector2_time,
             "sector3_time": t.sector3_time,
-            "timestamp": t.created_at.isoformat(),
+            "timestamp": t.timestamp.isoformat() if t.timestamp else None,
         }
         for t in timing_data
     ]
 
 
 @router.get("/sessions/{live_session_id}/events")
-async def get_live_events(
+def get_live_events(
     live_session_id: UUID,
     event_type: Optional[str] = None,
     limit: int = 100,
-    db: AsyncSession = Depends(get_db_session),
+    db: DBSession = Depends(get_db),
 ):
     """
     Get events for a live session.
@@ -260,15 +195,12 @@ async def get_live_events(
     Returns:
         List of LiveEvent records
     """
-    stmt = select(LiveEvent).where(LiveEvent.live_session_id == live_session_id)
+    query = db.query(LiveEvent).filter(LiveEvent.live_session_id == live_session_id)
 
     if event_type:
-        stmt = stmt.where(LiveEvent.event_type == event_type)
+        query = query.filter(LiveEvent.event_type == event_type)
 
-    stmt = stmt.order_by(LiveEvent.created_at.desc()).limit(limit)
-
-    result = await db.execute(stmt)
-    events = result.scalars().all()
+    events = query.order_by(LiveEvent.timestamp.desc()).limit(limit).all()
 
     return [
         {
@@ -276,26 +208,10 @@ async def get_live_events(
             "event_type": e.event_type,
             "driver_number": e.driver_number,
             "lap_number": e.lap_number,
-            "message": e.message,
-            "flag": e.flag,
+            "description": e.description,
+            "severity": e.severity,
             "data": e.data,
-            "timestamp": e.created_at.isoformat(),
+            "timestamp": e.timestamp.isoformat() if e.timestamp else None,
         }
         for e in events
     ]
-
-
-@router.get("/connections/count")
-async def get_connection_count(session_id: Optional[UUID] = None):
-    """
-    Get the number of active WebSocket connections.
-
-    Args:
-        session_id: Optional session ID to count connections for
-
-    Returns:
-        Connection count
-    """
-    manager = await get_ws_manager()
-    count = await manager.get_connection_count(str(session_id) if session_id else None)
-    return {"count": count, "session_id": str(session_id) if session_id else None}

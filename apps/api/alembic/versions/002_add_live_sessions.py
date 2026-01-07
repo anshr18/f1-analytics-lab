@@ -23,12 +23,13 @@ def upgrade() -> None:
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
         sa.Column('session_id', UUID(as_uuid=True), sa.ForeignKey('sessions.id', ondelete='CASCADE'), nullable=False, unique=True),
         sa.Column('is_active', sa.Boolean(), nullable=False, default=True),
+        sa.Column('openf1_session_key', sa.String(100), nullable=False),  # OpenF1 API session key
         sa.Column('started_at', sa.TIMESTAMP(), nullable=False, server_default=sa.text('NOW()')),
-        sa.Column('stopped_at', sa.TIMESTAMP(), nullable=True),
+        sa.Column('ended_at', sa.TIMESTAMP(), nullable=True),
         sa.Column('current_lap', sa.Integer(), nullable=True),
         sa.Column('session_status', sa.String(50), nullable=True),  # 'Started', 'Aborted', 'Finished', etc.
         sa.Column('track_status', sa.String(50), nullable=True),  # 'AllClear', 'Yellow', 'Red', 'SCDeployed', etc.
-        sa.Column('metadata', JSONB, nullable=False, server_default='{}'),
+        sa.Column('extra_data', JSONB, nullable=False, server_default='{}'),
         sa.Column('created_at', sa.TIMESTAMP(), nullable=False, server_default=sa.text('NOW()')),
         sa.Column('updated_at', sa.TIMESTAMP(), nullable=False, server_default=sa.text('NOW()'), onupdate=sa.text('NOW()')),
     )
@@ -38,7 +39,7 @@ def upgrade() -> None:
         'live_timing',
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
         sa.Column('live_session_id', UUID(as_uuid=True), sa.ForeignKey('live_sessions.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('driver_id', sa.String(3), sa.ForeignKey('drivers.abbreviation', ondelete='CASCADE'), nullable=False),
+        sa.Column('driver_number', sa.Integer(), nullable=False),  # OpenF1 uses driver numbers
         sa.Column('lap_number', sa.Integer(), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
         sa.Column('gap_to_leader', sa.Float(), nullable=True),  # seconds
@@ -52,7 +53,7 @@ def upgrade() -> None:
         sa.Column('tyre_age', sa.Integer(), nullable=True),
         sa.Column('in_pit', sa.Boolean(), nullable=False, default=False),
         sa.Column('timestamp', sa.TIMESTAMP(), nullable=False, server_default=sa.text('NOW()')),
-        sa.Column('metadata', JSONB, nullable=False, server_default='{}'),
+        sa.Column('extra_data', JSONB, nullable=False, server_default='{}'),
     )
 
     # Live events (pit stops, incidents, etc.)
@@ -62,7 +63,7 @@ def upgrade() -> None:
         sa.Column('live_session_id', UUID(as_uuid=True), sa.ForeignKey('live_sessions.id', ondelete='CASCADE'), nullable=False),
         sa.Column('event_type', sa.String(50), nullable=False),  # 'pit_stop', 'fastest_lap', 'overtake', 'incident', etc.
         sa.Column('lap_number', sa.Integer(), nullable=False),
-        sa.Column('driver_id', sa.String(3), sa.ForeignKey('drivers.abbreviation', ondelete='CASCADE'), nullable=True),
+        sa.Column('driver_number', sa.Integer(), nullable=True),  # OpenF1 uses driver numbers, nullable for non-driver events
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('severity', sa.String(20), nullable=True),  # 'info', 'warning', 'critical'
         sa.Column('data', JSONB, nullable=False, server_default='{}'),
@@ -78,14 +79,14 @@ def upgrade() -> None:
         sa.Column('user_id', sa.String(100), nullable=True),
         sa.Column('connected_at', sa.TIMESTAMP(), nullable=False, server_default=sa.text('NOW()')),
         sa.Column('disconnected_at', sa.TIMESTAMP(), nullable=True),
-        sa.Column('metadata', JSONB, nullable=False, server_default='{}'),
+        sa.Column('extra_data', JSONB, nullable=False, server_default='{}'),
     )
 
     # Create indexes for performance
     op.create_index('idx_live_sessions_session_id', 'live_sessions', ['session_id'])
     op.create_index('idx_live_sessions_active', 'live_sessions', ['is_active'])
     op.create_index('idx_live_timing_session_lap', 'live_timing', ['live_session_id', 'lap_number'])
-    op.create_index('idx_live_timing_driver', 'live_timing', ['driver_id'])
+    op.create_index('idx_live_timing_driver', 'live_timing', ['driver_number'])
     op.create_index('idx_live_events_session', 'live_events', ['live_session_id'])
     op.create_index('idx_live_events_type', 'live_events', ['event_type'])
     op.create_index('idx_websocket_connections_session', 'websocket_connections', ['live_session_id'])
