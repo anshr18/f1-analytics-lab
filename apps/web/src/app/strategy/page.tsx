@@ -90,18 +90,18 @@ export default function StrategyPage() {
       active: true,
     },
     {
-      id: "assistant",
-      label: "AI Assistant",
-      icon: MessageSquare,
-      href: "/assistant",
-      disabled: true,
-    },
-    {
       id: "live",
       label: "Live Timing",
       icon: Radio,
       href: "/live",
-      disabled: true,
+      active: false,
+    },
+    {
+      id: "assistant",
+      label: "AI Assistant",
+      icon: MessageSquare,
+      href: "/assistant",
+      active: false,
     },
   ];
 

@@ -103,18 +103,25 @@ export default function PredictionsPage() {
       active: false,
     },
     {
+      id: "live",
+      label: "Live Timing",
+      icon: Radio,
+      href: "/live",
+      active: false,
+    },
+    {
       id: "assistant",
       label: "AI Assistant",
       icon: MessageSquare,
       href: "/assistant",
-      disabled: true,
+      active: false,
     },
     {
       id: "live",
       label: "Live Timing",
       icon: Radio,
       href: "/live",
-      disabled: true,
+      active: false,
     },
   ];
 
