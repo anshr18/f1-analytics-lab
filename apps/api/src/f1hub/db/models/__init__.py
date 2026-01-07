@@ -7,6 +7,7 @@ SQLAlchemy ORM models for all database tables.
 from .base import TimestampMixin, UUIDPrimaryKeyMixin
 from .core import Constructor, Driver, Event, Season, Session
 from .features import BattleFeature, LapFeature, StintFeature
+from .live import LiveEvent, LiveSession, LiveTiming, WebSocketConnection
 from .llm import ChatMessage, ChatSession, Document, Embedding
 from .models import ModelRegistry, Prediction
 from .timing import Lap, Stint
@@ -40,4 +41,9 @@ __all__ = [
     "Embedding",
     "ChatSession",
     "ChatMessage",
+    # Live streaming models
+    "LiveSession",
+    "LiveTiming",
+    "LiveEvent",
+    "WebSocketConnection",
 ]
