@@ -92,6 +92,11 @@ services:
       FASTF1_CACHE_DIR: /app/data/fastf1_cache
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_MAX_TOKENS: ${OPENAI_MAX_TOKENS:-2000}
+      OPENAI_TEMPERATURE: ${OPENAI_TEMPERATURE:-0.7}
     ports:
       - "8000:8000"
     volumes:
@@ -146,6 +151,11 @@ services:
       FASTF1_CACHE_DIR: /app/data/fastf1_cache
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_MAX_TOKENS: ${OPENAI_MAX_TOKENS:-2000}
+      OPENAI_TEMPERATURE: ${OPENAI_TEMPERATURE:-0.7}
     volumes:
       - ./apps/api:/app
       - ./libs:/libs
