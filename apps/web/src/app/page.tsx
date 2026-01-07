@@ -38,7 +38,7 @@ export default function Home() {
         </Link>
 
         <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md opacity-50 cursor-not-allowed">
-          <h3 className="text-2xl font-semibold mb-2">AI Chat</h3>
+          <h3 className="text-2xl font-semibold mb-2">AI Assistant</h3>
           <p className="text-gray-600 dark:text-gray-400">Coming in Phase 3: RAG-powered Q&A</p>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
 
         <div className="bg-purple-50 dark:bg-purple-900 rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Phase 2: Strategy Simulator 🚀</h3>
+          <h3 className="text-xl font-semibold mb-4">Phase 2: Strategy Simulator ✅</h3>
           <ul className="space-y-2 text-gray-700 dark:text-gray-300">
             <li className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>
@@ -120,12 +120,38 @@ export default function Home() {
               Animated charts for gap evolution
             </li>
             <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Safety car strategy recommender
+            </li>
+            <li className="flex items-center">
+              <span className="text-green-500 mr-2">✓</span>
+              Full race simulation engine with playback
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Phase 3: AI Assistant 🚀</h3>
+          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+            <li className="flex items-center">
               <span className="text-yellow-500 mr-2">○</span>
-              Safety car strategy recommender (planned)
+              RAG-powered question answering
             </li>
             <li className="flex items-center">
               <span className="text-yellow-500 mr-2">○</span>
-              Full race simulation engine (planned)
+              Embeddings generation for F1 data
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">○</span>
+              Semantic search with pgvector
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">○</span>
+              Chat interface with context awareness
+            </li>
+            <li className="flex items-center">
+              <span className="text-yellow-500 mr-2">○</span>
+              Natural language query interface
             </li>
           </ul>
         </div>
