@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { Target, BarChart3, Gamepad2, MessageSquare } from "lucide-react";
 import { RacePicker } from "@/components/RacePicker";
 import { LapChart } from "@/components/charts/LapChart";
 import { StintChart } from "@/components/charts/StintChart";
@@ -9,12 +11,74 @@ import { PredictionSummaryCard } from "@/components/predictions/PredictionSummar
 export default function DashboardPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
+  const navItems = [
+    {
+      id: "predictions",
+      label: "ML Predictions",
+      icon: Target,
+      href: "/predictions",
+      active: false,
+    },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: BarChart3,
+      href: "/dashboard",
+      active: true,
+    },
+    {
+      id: "strategy",
+      label: "Strategy Simulator",
+      icon: Gamepad2,
+      href: "/strategy",
+      active: false,
+    },
+    {
+      id: "assistant",
+      label: "AI Assistant",
+      icon: MessageSquare,
+      href: "/assistant",
+      active: false,
+    },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">F1 Analytics Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">Select a race and session to analyze lap times and tyre strategies</p>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
+      {/* Top Navigation */}
+      <div className="border-b border-[var(--color-border)]">
+        <div className="flex gap-1 px-6 pt-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`
+                  flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+                  ${
+                    item.active
+                      ? "text-[var(--color-primary)]"
+                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+                {item.active && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">F1 Analytics Dashboard</h1>
+          <p className="text-[var(--color-text-secondary)]">Select a race and session to analyze lap times and tyre strategies</p>
+        </div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         {/* Race Picker - Takes 1 column */}
@@ -123,6 +187,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

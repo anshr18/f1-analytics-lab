@@ -9,16 +9,13 @@ import {
   Target,
   BarChart3,
   Gamepad2,
-  Zap,
   Bot,
   User,
   Trash2,
   Plus,
   Database,
   FileText,
-  TrendingUp,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
 import {
   createChatSession,
@@ -237,48 +234,35 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-red-950/20 to-slate-950 text-white">
-      {/* Navigation */}
-      <nav className="border-b border-red-500/20 bg-slate-950/50 backdrop-blur-xl">
-        <div className="max-w-[1920px] mx-auto px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-3 group">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full group-hover:bg-red-500/30 transition-all" />
-                  <Zap className="h-8 w-8 text-red-500 relative" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                    F1 Intelligence
-                  </span>
-                  <span className="text-xs text-slate-400">AI Assistant</span>
-                </div>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
+      {/* Top Navigation */}
+      <div className="border-b border-[var(--color-border)]">
+        <div className="flex gap-1 px-6 pt-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`
+                  flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+                  ${
+                    item.active
+                      ? "text-[var(--color-primary)]"
+                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+                {item.active && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+                )}
               </Link>
-
-              <div className="flex items-center gap-2">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                        item.active
-                          ? "bg-gradient-to-r from-red-500/20 to-orange-500/20 text-white border border-red-500/30"
-                          : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      </nav>
+      </div>
 
       <div className="max-w-[1920px] mx-auto px-8 py-8">
         <div className="grid grid-cols-12 gap-6 h-[calc(100vh-120px)]">
