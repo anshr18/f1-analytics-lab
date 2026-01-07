@@ -18,6 +18,7 @@ from .v1 import (
     sessions,
     stints,
     strategy,
+    chat,
 )
 
 # Create main API router
@@ -37,3 +38,4 @@ api_router.include_router(features.router, tags=["Features"])
 api_router.include_router(models.router, tags=["Models"])
 api_router.include_router(predictions.router, tags=["Predictions"])
 api_router.include_router(strategy.router, tags=["Strategy"])
+api_router.include_router(chat.router, tags=["Chat"])

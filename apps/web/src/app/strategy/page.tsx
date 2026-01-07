@@ -7,7 +7,6 @@ import {
   BarChart3,
   Gamepad2,
   MessageSquare,
-  Radio,
   Sparkles,
   TrendingUp,
   Flag,
@@ -94,14 +93,7 @@ export default function StrategyPage() {
       label: "AI Assistant",
       icon: MessageSquare,
       href: "/assistant",
-      disabled: true,
-    },
-    {
-      id: "live",
-      label: "Live Timing",
-      icon: Radio,
-      href: "/live",
-      disabled: true,
+      active: false,
     },
   ];
 
@@ -189,31 +181,26 @@ export default function StrategyPage() {
         <div className="flex gap-1 px-6 pt-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            if (item.href) {
-              return (
-                <Link
-                  key={item.id}
-                  href={item.disabled ? "#" : item.href}
-                  className={`
-                    flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
-                    ${item.disabled ? "opacity-40 cursor-not-allowed" : ""}
-                    ${
-                      item.active
-                        ? "text-[var(--color-primary)]"
-                        : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                    }
-                  `}
-                  onClick={(e) => item.disabled && e.preventDefault()}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                  {item.active && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
-                  )}
-                </Link>
-              );
-            }
-            return null;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`
+                  flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative
+                  ${
+                    item.active
+                      ? "text-[var(--color-primary)]"
+                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+                {item.active && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)]" />
+                )}
+              </Link>
+            );
           })}
         </div>
       </div>
