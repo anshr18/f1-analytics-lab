@@ -112,7 +112,10 @@ class Settings(BaseSettings):
     # OpenAI (for Phase 3 LLM features)
     # ========================================================================
     OPENAI_API_KEY: str | None = None
-    OPENAI_MODEL: str = Field(default="gpt-4-turbo-preview")
+    OPENAI_MODEL: str = Field(default="gpt-4o-mini")
+    OPENAI_EMBEDDING_MODEL: str = Field(default="text-embedding-3-small")
+    OPENAI_MAX_TOKENS: int = Field(default=2000)
+    OPENAI_TEMPERATURE: float = Field(default=0.7)
 
     # ========================================================================
     # Feature Flags
