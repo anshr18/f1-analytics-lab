@@ -1,0 +1,50 @@
+# API directory (not deployed to Vercel)
+apps/api
+
+# Python files
+*.py
+*.pyc
+__pycache__
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Environment files (use Vercel dashboard instead)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Database
+*.db
+*.sqlite
+
+# Test files
+test_*.py
+*_test.py
+tests/
+**/__tests__/
+
+# Development
+.vscode/
+.idea/
+*.log
+
+# Documentation that's not needed for build
+docs/
+*.md
+!apps/web/README.md
+
+# Cache
+.cache/
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
