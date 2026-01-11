@@ -14,8 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib directories (exclude frontend src/lib)
+/lib/
 lib64/
+apps/api/lib/
+libs/*/lib/
 parts/
 sdist/
 var/
@@ -205,3 +208,56 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ============================================================================
+# F1 Intelligence Hub - Project Specific
+# ============================================================================
+
+# Data directories (keep structure, ignore contents)
+data/*
+!data/.gitkeep
+!data/raw/
+!data/processed/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/fastf1_cache/
+
+# Model artifacts
+models/*
+!models/.gitkeep
+
+# Docker volumes (if mounted locally)
+postgres-data/
+redis-data/
+minio-data/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+apps/web/node_modules/
+apps/web/.env.local
+apps/web/.env.*.local
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
