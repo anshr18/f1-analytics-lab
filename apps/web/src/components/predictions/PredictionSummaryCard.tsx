@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardHeader } from "@/components/ui/Card";
 import {
   predictLapTime,
   predictOvertake,
@@ -32,127 +31,64 @@ export function PredictionSummaryCard({
 
   useEffect(() => {
     if (!sessionId) return;
-
-    const fetchPrediction = async () => {
+    const fetch = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        // Use default/example parameters for each model
         let result;
         switch (modelName) {
           case "lap_time":
-            result = await predictLapTime({
-              tyre_age: 15,
-              compound: "MEDIUM",
-              track_status: "GREEN",
-              position: 1,
-              driver_id: "VER",
-            });
+            result = await predictLapTime({ tyre_age: 15, compound: "MEDIUM", track_status: "GREEN", position: 1, driver_id: "VER" });
             break;
-
           case "overtake":
-            result = await predictOvertake({
-              gap_seconds: 1.5,
-              closing_rate: -0.15,
-              tyre_advantage: 1,
-              drs_available: true,
-              lap_number: 35,
-            });
+            result = await predictOvertake({ gap_seconds: 1.5, closing_rate: -0.15, tyre_advantage: 1, drs_available: true, lap_number: 35 });
             break;
-
           case "race_result":
-            result = await predictRaceResult({
-              grid_position: 1,
-              avg_lap_time: 91.5,
-              driver_id: "VER",
-            });
+            result = await predictRaceResult({ grid_position: 1, avg_lap_time: 91.5, driver_id: "VER" });
             break;
         }
-
         setPrediction(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Prediction failed");
+        setError(err instanceof Error ? err.message : "Failed");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchPrediction();
+    fetch();
   }, [sessionId, modelName]);
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="text-center py-4 text-gray-500 text-sm">
-          Loading...
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-4 text-red-500 text-sm">{error}</div>
-      );
-    }
-
-    if (!prediction) {
-      return (
-        <div className="text-center py-4 text-gray-400 text-sm">
-          Select a session to see predictions
-        </div>
-      );
-    }
+  const getValue = () => {
+    if (loading) return <span className="text-surface-container-highest animate-pulse">···</span>;
+    if (error) return <span className="text-error font-data-sm text-data-sm">Error</span>;
+    if (!prediction) return <span className="text-surface-container-highest">—</span>;
 
     switch (modelName) {
       case "lap_time": {
-        const data = prediction as LapTimePrediction;
-        return (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">
-              {data.predicted_lap_time.toFixed(2)}s
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Leader pace (15 laps on mediums)
-            </div>
-          </div>
-        );
+        const d = prediction as LapTimePrediction;
+        const secs = d.predicted_lap_time;
+        const m = Math.floor(secs / 60);
+        const s = (secs % 60).toFixed(3).padStart(6, "0");
+        return <>{m}:{s}</>;
       }
-
       case "overtake": {
-        const data = prediction as OvertakePrediction;
-        return (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">
-              {(data.overtake_probability * 100).toFixed(0)}%
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Battle probability (1.5s gap, DRS)
-            </div>
-          </div>
-        );
+        const d = prediction as OvertakePrediction;
+        return <>{(d.overtake_probability * 100).toFixed(0)}%</>;
       }
-
       case "race_result": {
-        const data = prediction as RaceResultPrediction;
-        return (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">
-              P{data.predicted_position}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Expected finish from pole
-            </div>
-          </div>
-        );
+        const d = prediction as RaceResultPrediction;
+        return <>P{d.predicted_position}</>;
       }
     }
   };
 
   return (
-    <Card>
-      <CardHeader title={title} />
-      <div className="py-2">{renderContent()}</div>
-    </Card>
+    <div className="bg-[#141414] border border-[#2A2A2A] border-l-2 border-l-primary-container p-md flex flex-col gap-xs">
+      <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">
+        {title}
+      </span>
+      <div className="font-data-lg text-data-lg text-on-surface mt-xs">
+        {getValue()}
+      </div>
+    </div>
   );
 }
