@@ -5,7 +5,7 @@ import { fetchSeasons, fetchEvents } from "@/lib/api/races";
 import { fetchSessions } from "@/lib/api/sessions";
 import { ingestSession, getTaskStatus } from "@/lib/api/ingest";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import type { Season, Event, Session } from "@/types/api";
 
@@ -164,7 +164,8 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
   const canIngest = selectedEvent && selectedSession;
 
   return (
-    <Card title="Race Selection">
+    <Card>
+      <CardHeader title="Race Selection" />
       <div className="space-y-4">
         {/* Year Selector */}
         <div>

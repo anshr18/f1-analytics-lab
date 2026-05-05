@@ -44,7 +44,10 @@ export function useLiveSession({
 
   const getWebSocketUrl = useCallback((sessionId: string) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, '') || 'localhost:8000';
+    // Extract just the host:port from the API URL, removing protocol and any path
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    const url = new URL(apiUrl);
+    const host = url.host; // Gets host:port without protocol or path
     return `${protocol}//${host}/api/v1/live/ws/${sessionId}`;
   }, []);
 
