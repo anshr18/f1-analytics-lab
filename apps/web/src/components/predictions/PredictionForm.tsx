@@ -8,7 +8,7 @@ import {
   predictRaceResult,
 } from "@/lib/api/predictions";
 import type { PredictionResponse } from "@/types/predictions";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 interface PredictionFormProps {
@@ -327,7 +327,8 @@ export function PredictionForm({ modelName, onPredict }: PredictionFormProps) {
   );
 
   return (
-    <Card title="Prediction Input">
+    <Card>
+      <CardHeader title="Prediction Input" />
       <form onSubmit={handleSubmit}>
         {modelName === "tyre_degradation" && renderTyreDegradationForm()}
         {modelName === "lap_time" && renderLapTimeForm()}

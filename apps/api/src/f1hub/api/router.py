@@ -13,6 +13,7 @@ from .v1 import (
     ingest,
     laps,
     live,
+    mock_sessions,
     models,
     predictions,
     races,
@@ -41,3 +42,4 @@ api_router.include_router(predictions.router, tags=["Predictions"])
 api_router.include_router(strategy.router, tags=["Strategy"])
 api_router.include_router(chat.router, tags=["Chat"])
 api_router.include_router(live.router, tags=["Live"])
+api_router.include_router(mock_sessions.router, tags=["Mock"])

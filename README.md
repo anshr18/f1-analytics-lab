@@ -228,7 +228,7 @@ Optional for local development without Docker:
 - Python 3.11+
 - Node.js 20+
 
-### Quick Start
+### Quick Start (Docker - Full Stack)
 
 1. **Clone the repository**
    ```bash
@@ -264,6 +264,92 @@ Optional for local development without Docker:
    make db-seed
    # This will ingest 2024 Bahrain GP Race data
    ```
+
+---
+
+### Quick Start (Local Development)
+
+For faster development iteration, run the frontend and backend locally while using Docker only for databases.
+
+#### Prerequisites
+
+- Python 3.11+ with virtual environment
+- Node.js 18+
+- Docker Desktop (for PostgreSQL and Redis)
+
+#### Step 1: Start Databases (Docker)
+
+```bash
+# Start only PostgreSQL, Redis, and MinIO
+docker-compose up -d postgres redis minio
+```
+
+#### Step 2: Start Backend (Terminal 1)
+
+```bash
+# From project root (f1-analytics-lab directory)
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Navigate to API directory
+cd apps/api
+
+# Run database migrations (first time only)
+alembic upgrade head
+
+# Start the backend server
+python -m uvicorn f1hub.main:app --host 0.0.0.0 --port 8000
+```
+
+You should see:
+```
+INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Application startup complete.
+```
+
+#### Step 3: Start Frontend (Terminal 2)
+
+```bash
+# From project root (f1-analytics-lab directory)
+cd apps/web
+
+# Install dependencies (first time only)
+npm install
+
+# Start the development server
+npm run dev
+```
+
+You should see:
+```
+▲ Next.js 15.x
+- Local: http://localhost:3000
+```
+
+#### Step 4: Access the Application
+
+- 🌐 **Web UI**: http://localhost:3000
+- 🚀 **API**: http://localhost:8000
+- 📚 **API Docs**: http://localhost:8000/docs
+
+#### Stopping Services
+
+```bash
+# Stop backend: Press Ctrl+C in Terminal 1
+# Stop frontend: Press Ctrl+C in Terminal 2
+# Stop databases:
+docker-compose down
+```
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError` | Run `pip install -e ".[dev]"` in `apps/api` |
+| `Port already in use` | Run `lsof -ti:8000 \| xargs kill -9` |
+| Database connection error | Ensure Docker containers are running: `docker ps` |
+| `Failed to fetch` in browser | Make sure backend is running on port 8000 |
 
 ---
 
