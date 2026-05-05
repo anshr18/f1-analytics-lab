@@ -1,10 +1,50 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BarChart3, Target, Gamepad2, MessageSquare, Radio } from "lucide-react";
 import { RacePicker } from "@/components/RacePicker";
 import { LapChart } from "@/components/charts/LapChart";
 import { StintChart } from "@/components/charts/StintChart";
 import { PredictionSummaryCard } from "@/components/predictions/PredictionSummaryCard";
+
+const navItems = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3, href: "/" },
+  { id: "predictions", label: "Predictions", icon: Target, href: "/predictions" },
+  { id: "strategy", label: "Strategy", icon: Gamepad2, href: "/strategy" },
+  { id: "live", label: "Live Timing", icon: Radio, href: "/live" },
+  { id: "assistant", label: "AI Assistant", icon: MessageSquare, href: "/assistant" },
+];
+
+function TopNav() {
+  const pathname = usePathname();
+  return (
+    <div className="border-b border-[var(--color-border)]">
+      <div className="flex items-center gap-1 px-6 pt-4">
+        <span className="font-bold italic text-[#E8002D] text-sm mr-4 tracking-tight uppercase">
+          F1 Intelligence Hub
+        </span>
+        {navItems.map(({ id, label, icon: Icon, href }) => {
+          const active = href === "/" ? pathname === "/" || pathname === "/dashboard" : pathname.startsWith(href);
+          return (
+            <Link
+              key={id}
+              href={href}
+              className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                active ? "text-white" : "text-[#666666] hover:text-[var(--color-text-primary)]"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{label}</span>
+              {active && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E8002D]" />}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ── Hero Stats Bar ────────────────────────────────────────────────────────────
 
@@ -171,7 +211,8 @@ export default function HomePage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-screen">
+      <TopNav />
       <HeroStatsBar sessionId={selectedSessionId} />
 
       {/* Main workspace */}

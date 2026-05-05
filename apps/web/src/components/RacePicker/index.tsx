@@ -134,7 +134,7 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
               value={selectedYear || ""}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               disabled={loading}
-              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 pl-md pr-8 appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
             >
               <option value="">Select season</option>
               {seasons.map((s) => (
@@ -155,7 +155,7 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
               value={selectedEvent || ""}
               onChange={(e) => setSelectedEvent(e.target.value)}
               disabled={loading || !selectedYear}
-              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 pl-md pr-8 appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
             >
               <option value="">Select race</option>
               {events.map((e) => (
@@ -178,7 +178,7 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
               value={selectedSession || ""}
               onChange={(e) => setSelectedSession(e.target.value)}
               disabled={loading || !selectedEvent}
-              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 pl-md pr-8 appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
             >
               <option value="">Select session</option>
               {sessions.map((s) => (

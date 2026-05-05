@@ -1,48 +1,57 @@
 """
 LLM Service
 
-OpenAI client wrapper for chat completions and text generation.
+Google Gemini client wrapper for chat completions and text generation.
 """
 
 from typing import List, Dict, Any, Optional
-import tiktoken
-from openai import OpenAI, AsyncOpenAI
+import google.generativeai as genai
 from f1hub.core.config import settings
 
 
 class LLMService:
-    """Service for interacting with OpenAI LLMs for chat completions."""
+    """Service for interacting with Google Gemini for chat completions."""
 
     def __init__(self):
-        """Initialize LLM service with OpenAI client."""
-        if not settings.OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY not configured")
+        if not settings.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY not configured")
 
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.async_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.OPENAI_MODEL
-        self.max_tokens = settings.OPENAI_MAX_TOKENS
-        self.temperature = settings.OPENAI_TEMPERATURE
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model = settings.GEMINI_MODEL
+        self.max_tokens = settings.GEMINI_MAX_TOKENS
+        self.temperature = settings.GEMINI_TEMPERATURE
+
+    def _build_model(self, model_name: str, system_instruction: Optional[str]) -> genai.GenerativeModel:
+        kwargs: Dict[str, Any] = {}
+        if system_instruction:
+            kwargs["system_instruction"] = system_instruction
+        return genai.GenerativeModel(model_name, **kwargs)
+
+    def _convert_messages(self, messages: List[Dict[str, str]]):
+        """Convert OpenAI-style messages to Gemini format, extracting system prompt."""
+        system_instruction = None
+        gemini_messages = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "system":
+                system_instruction = content
+            elif role == "user":
+                gemini_messages.append({"role": "user", "parts": [content]})
+            elif role == "assistant":
+                gemini_messages.append({"role": "model", "parts": [content]})
+        return system_instruction, gemini_messages
+
+    def _gen_config(self, temperature: Optional[float], max_tokens: Optional[int]) -> genai.types.GenerationConfig:
+        return genai.types.GenerationConfig(
+            max_output_tokens=max_tokens or self.max_tokens,
+            temperature=temperature if temperature is not None else self.temperature,
+        )
 
     def count_tokens(self, text: str, model: Optional[str] = None) -> int:
-        """
-        Count tokens in text using tiktoken.
-
-        Args:
-            text: Text to count tokens for
-            model: Model name (defaults to configured model)
-
-        Returns:
-            Number of tokens
-        """
-        model = model or self.model
-        try:
-            encoding = tiktoken.encoding_for_model(model)
-        except KeyError:
-            # Fallback to cl100k_base for unknown models
-            encoding = tiktoken.get_encoding("cl100k_base")
-
-        return len(encoding.encode(text))
+        m = self._build_model(model or self.model, None)
+        result = m.count_tokens(text)
+        return result.total_tokens
 
     def generate_completion(
         self,
@@ -51,34 +60,20 @@ class LLMService:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate chat completion.
-
-        Args:
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Sampling temperature (0-2)
-            max_tokens: Maximum tokens to generate
-            model: Model to use (defaults to configured model)
-
-        Returns:
-            Dict containing completion response with content and usage
-        """
-        response = self.client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-        )
+        model_name = model or self.model
+        system_instruction, gemini_messages = self._convert_messages(messages)
+        m = self._build_model(model_name, system_instruction)
+        response = m.generate_content(gemini_messages, generation_config=self._gen_config(temperature, max_tokens))
 
         return {
-            "content": response.choices[0].message.content,
-            "finish_reason": response.choices[0].finish_reason,
+            "content": response.text,
+            "finish_reason": response.candidates[0].finish_reason.name if response.candidates else "STOP",
             "usage": {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
+                "prompt_tokens": response.usage_metadata.prompt_token_count,
+                "completion_tokens": response.usage_metadata.candidates_token_count,
+                "total_tokens": response.usage_metadata.total_token_count,
             },
-            "model": response.model,
+            "model": model_name,
         }
 
     async def generate_completion_async(
@@ -88,34 +83,22 @@ class LLMService:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate chat completion asynchronously.
-
-        Args:
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Sampling temperature (0-2)
-            max_tokens: Maximum tokens to generate
-            model: Model to use (defaults to configured model)
-
-        Returns:
-            Dict containing completion response with content and usage
-        """
-        response = await self.async_client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+        model_name = model or self.model
+        system_instruction, gemini_messages = self._convert_messages(messages)
+        m = self._build_model(model_name, system_instruction)
+        response = await m.generate_content_async(
+            gemini_messages, generation_config=self._gen_config(temperature, max_tokens)
         )
 
         return {
-            "content": response.choices[0].message.content,
-            "finish_reason": response.choices[0].finish_reason,
+            "content": response.text,
+            "finish_reason": response.candidates[0].finish_reason.name if response.candidates else "STOP",
             "usage": {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
+                "prompt_tokens": response.usage_metadata.prompt_token_count,
+                "completion_tokens": response.usage_metadata.candidates_token_count,
+                "total_tokens": response.usage_metadata.total_token_count,
             },
-            "model": response.model,
+            "model": model_name,
         }
 
     def generate_streaming_completion(
@@ -125,29 +108,15 @@ class LLMService:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ):
-        """
-        Generate streaming chat completion.
-
-        Args:
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Sampling temperature (0-2)
-            max_tokens: Maximum tokens to generate
-            model: Model to use (defaults to configured model)
-
-        Yields:
-            Content chunks as they arrive
-        """
-        stream = self.client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-            stream=True,
+        model_name = model or self.model
+        system_instruction, gemini_messages = self._convert_messages(messages)
+        m = self._build_model(model_name, system_instruction)
+        response = m.generate_content(
+            gemini_messages, generation_config=self._gen_config(temperature, max_tokens), stream=True
         )
-
-        for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                yield chunk.choices[0].delta.content
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
 
     async def generate_streaming_completion_async(
         self,
@@ -156,26 +125,12 @@ class LLMService:
         max_tokens: Optional[int] = None,
         model: Optional[str] = None,
     ):
-        """
-        Generate streaming chat completion asynchronously.
-
-        Args:
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Sampling temperature (0-2)
-            max_tokens: Maximum tokens to generate
-            model: Model to use (defaults to configured model)
-
-        Yields:
-            Content chunks as they arrive
-        """
-        stream = await self.async_client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-            stream=True,
+        model_name = model or self.model
+        system_instruction, gemini_messages = self._convert_messages(messages)
+        m = self._build_model(model_name, system_instruction)
+        response = await m.generate_content_async(
+            gemini_messages, generation_config=self._gen_config(temperature, max_tokens), stream=True
         )
-
-        async for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                yield chunk.choices[0].delta.content
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
