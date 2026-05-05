@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
@@ -16,7 +15,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-[#0A0A0A] text-[#e5e2e1] antialiased flex flex-col min-h-screen font-body-base">
-        <TopNav />
         <main className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
