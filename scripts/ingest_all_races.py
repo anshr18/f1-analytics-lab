@@ -101,8 +101,8 @@ def ingest_session(service, year: int, round_num: int, session_type: str, event_
 
 def main():
     parser = argparse.ArgumentParser(description='Ingest F1 race data')
-    parser.add_argument('--years', nargs='+', type=int, default=[2023, 2024],
-                        help='Years to ingest (default: 2023 2024)')
+    parser.add_argument('--years', nargs='+', type=int, default=[2020, 2021, 2022, 2023, 2024],
+                        help='Years to ingest (default: 2020-2024)')
     parser.add_argument('--races-only', action='store_true',
                         help='Only ingest Race sessions (skip FP, Q, Sprint)')
     parser.add_argument('--include-practice', action='store_true',
