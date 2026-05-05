@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { TopNav } from "@/components/layout/TopNav";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
   title: "F1 Intelligence Hub",
-  description: "F1 analytics platform with ML, LLM, and live streaming capabilities",
+  description: "F1 analytics platform with ML predictions, strategy simulation, and live timing",
 };
 
 export default function RootLayout({
@@ -12,20 +14,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        <header className="bg-f1red text-white shadow-lg">
-          <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold">F1 Intelligence Hub</h1>
-            <p className="text-sm opacity-90">Phase 0: Data Foundation</p>
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-8">{children}</main>
-        <footer className="mt-16 border-t border-gray-200 dark:border-gray-800 py-8">
-          <div className="container mx-auto px-4 text-center text-sm text-gray-600 dark:text-gray-400">
-            Built with Next.js, FastAPI, and FastF1
-          </div>
-        </footer>
+    <html lang="en" className="dark">
+      <body className="bg-[#0A0A0A] text-[#e5e2e1] antialiased flex flex-col min-h-screen font-body-base">
+        <TopNav />
+        <main className="flex-1 pb-16 md:pb-0">
+          {children}
+        </main>
+        <BottomNav />
       </body>
     </html>
   );

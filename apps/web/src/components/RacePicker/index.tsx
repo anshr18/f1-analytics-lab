@@ -4,9 +4,6 @@ import { useState, useEffect } from "react";
 import { fetchSeasons, fetchEvents } from "@/lib/api/races";
 import { fetchSessions } from "@/lib/api/sessions";
 import { ingestSession, getTaskStatus } from "@/lib/api/ingest";
-import { Button } from "@/components/ui/Button";
-import { Card, CardHeader } from "@/components/ui/Card";
-import { Spinner } from "@/components/ui/Spinner";
 import type { Season, Event, Session } from "@/types/api";
 
 interface RacePickerProps {
@@ -28,29 +25,14 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
   const [ingestMessage, setIngestMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Load seasons on mount
+  useEffect(() => { loadSeasons(); }, []);
   useEffect(() => {
-    loadSeasons();
-  }, []);
-
-  // Load events when year changes
-  useEffect(() => {
-    if (selectedYear) {
-      loadEvents(selectedYear);
-    } else {
-      setEvents([]);
-      setSelectedEvent(null);
-    }
+    if (selectedYear) { loadEvents(selectedYear); }
+    else { setEvents([]); setSelectedEvent(null); }
   }, [selectedYear]);
-
-  // Load sessions when event changes
   useEffect(() => {
-    if (selectedEvent) {
-      loadSessions(selectedEvent);
-    } else {
-      setSessions([]);
-      setSelectedSession(null);
-    }
+    if (selectedEvent) { loadSessions(selectedEvent); }
+    else { setSessions([]); setSelectedSession(null); }
   }, [selectedEvent]);
 
   async function loadSeasons() {
@@ -58,15 +40,9 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
       setLoading(true);
       const data = await fetchSeasons();
       setSeasons(data);
-      if (data.length > 0) {
-        setSelectedYear(data[0].year); // Auto-select latest year
-      }
-    } catch (err) {
-      setError("Failed to load seasons");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      if (data.length > 0) setSelectedYear(data[0].year);
+    } catch { setError("Failed to load seasons"); }
+    finally { setLoading(false); }
   }
 
   async function loadEvents(year: number) {
@@ -74,12 +50,8 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
       setLoading(true);
       const data = await fetchEvents(year);
       setEvents(data);
-    } catch (err) {
-      setError("Failed to load events");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Failed to load events"); }
+    finally { setLoading(false); }
   }
 
   async function loadSessions(eventId: string) {
@@ -87,23 +59,16 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
       setLoading(true);
       const data = await fetchSessions(eventId);
       setSessions(data);
-    } catch (err) {
-      setError("Failed to load sessions");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Failed to load sessions"); }
+    finally { setLoading(false); }
   }
 
-  async function handleIngestAndLoad() {
+  async function handleLoad() {
     if (!selectedEvent || !selectedSession) return;
-
     const event = events.find((e) => e.id === selectedEvent);
     const session = sessions.find((s) => s.id === selectedSession);
-
     if (!event || !session) return;
 
-    // Check if already ingested
     if (session.is_ingested) {
       onSessionSelect(selectedSession);
       return;
@@ -115,7 +80,6 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
       setIngestMessage("Starting ingestion...");
       setError(null);
 
-      // Start ingestion
       const response = await ingestSession({
         year: event.season_year,
         round_number: event.round_number,
@@ -123,151 +87,155 @@ export function RacePicker({ onSessionSelect }: RacePickerProps) {
         source: "fastf1",
       });
 
-      // Poll for status
       const taskId = response.task_id;
       let completed = false;
-
       while (!completed) {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2s
-
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const status = await getTaskStatus(taskId);
-
         setIngestProgress(status.progress || 0);
         setIngestMessage(status.current || "Processing...");
-
         if (status.status === "SUCCESS") {
           completed = true;
           setIngestProgress(100);
           setIngestMessage("Ingestion complete!");
-
-          // Reload sessions to get updated is_ingested flag
           await loadSessions(selectedEvent);
-
-          // Load the session
-          if (status.session_id) {
-            onSessionSelect(status.session_id);
-          }
+          if (status.session_id) onSessionSelect(status.session_id);
         } else if (status.status === "FAILURE") {
           throw new Error(status.error || "Ingestion failed");
         }
       }
-    } catch (err: any) {
-      setError(err.message || "Ingestion failed");
-      console.error(err);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Ingestion failed");
     } finally {
       setIngesting(false);
     }
   }
 
-  const selectedEventData = events.find((e) => e.id === selectedEvent);
+  const canLoad = selectedEvent && selectedSession;
   const selectedSessionData = sessions.find((s) => s.id === selectedSession);
-  const canIngest = selectedEvent && selectedSession;
 
   return (
-    <Card>
-      <CardHeader title="Race Selection" />
-      <div className="space-y-4">
-        {/* Year Selector */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Season</label>
-          <select
-            value={selectedYear || ""}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
-            disabled={loading}
-          >
-            <option value="">Select a season</option>
-            {seasons.map((season) => (
-              <option key={season.year} value={season.year}>
-                {season.year} ({season.event_count || 0} events)
-              </option>
-            ))}
-          </select>
+    <div className="bg-surface border border-surface-container-high h-full flex flex-col">
+      {/* Header */}
+      <div className="px-md py-sm border-b border-surface-container-high flex items-center gap-sm bg-surface-container-lowest">
+        <span className="material-symbols-outlined text-on-surface-variant text-[16px]">tune</span>
+        <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
+          Session Configuration
+        </span>
+      </div>
+
+      {/* Controls */}
+      <div className="flex-1 overflow-y-auto p-md flex flex-col gap-lg">
+        {/* Season */}
+        <div className="flex flex-col gap-xs">
+          <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Season</label>
+          <div className="relative">
+            <select
+              value={selectedYear || ""}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              disabled={loading}
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+            >
+              <option value="">Select season</option>
+              {seasons.map((s) => (
+                <option key={s.year} value={s.year}>{s.year}</option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">
+              arrow_drop_down
+            </span>
+          </div>
         </div>
 
-        {/* Event Selector */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Grand Prix</label>
-          <select
-            value={selectedEvent || ""}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
-            disabled={loading || !selectedYear}
-          >
-            <option value="">Select a race</option>
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                Round {event.round_number}: {event.event_name}
-              </option>
-            ))}
-          </select>
+        {/* Grand Prix */}
+        <div className="flex flex-col gap-xs">
+          <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Grand Prix</label>
+          <div className="relative">
+            <select
+              value={selectedEvent || ""}
+              onChange={(e) => setSelectedEvent(e.target.value)}
+              disabled={loading || !selectedYear}
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+            >
+              <option value="">Select race</option>
+              {events.map((e) => (
+                <option key={e.id} value={e.id}>
+                  Rnd {e.round_number}: {e.event_name}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">
+              arrow_drop_down
+            </span>
+          </div>
         </div>
 
-        {/* Session Selector */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Session</label>
-          <select
-            value={selectedSession || ""}
-            onChange={(e) => setSelectedSession(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
-            disabled={loading || !selectedEvent}
-          >
-            <option value="">Select a session</option>
-            {sessions.map((session) => (
-              <option key={session.id} value={session.id}>
-                {session.session_type} {session.is_ingested && "✓ (ingested)"}
-              </option>
-            ))}
-          </select>
+        {/* Session */}
+        <div className="flex flex-col gap-xs">
+          <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Session</label>
+          <div className="relative">
+            <select
+              value={selectedSession || ""}
+              onChange={(e) => setSelectedSession(e.target.value)}
+              disabled={loading || !selectedEvent}
+              className="w-full bg-surface-container-lowest border border-surface-container-high text-on-surface font-data-sm text-data-sm h-10 px-md appearance-none cursor-pointer hover:border-secondary-container focus:outline-none focus:border-primary-container transition-colors disabled:opacity-50"
+            >
+              <option value="">Select session</option>
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.session_type}{s.is_ingested ? " ✓" : ""}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">
+              arrow_drop_down
+            </span>
+          </div>
         </div>
 
-        {/* Ingestion Status */}
+        {/* Ingestion progress */}
         {ingesting && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Spinner size="sm" />
-              <span className="font-medium">{ingestMessage}</span>
+          <div className="flex flex-col gap-sm">
+            <div className="flex items-center gap-sm">
+              <span className="material-symbols-outlined text-primary-container text-[14px] animate-spin">
+                refresh
+              </span>
+              <span className="font-label-caps text-label-caps text-on-surface-variant">
+                {ingestMessage}
+              </span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-surface-container-high h-0.5">
               <div
-                className="bg-f1red h-2 rounded-full transition-all duration-300"
+                className="bg-primary-container h-0.5 transition-all duration-300"
                 style={{ width: `${ingestProgress}%` }}
               />
             </div>
           </div>
         )}
 
-        {/* Error Display */}
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-400">
-            {error}
+          <div className="border border-error-container bg-error-container/10 px-sm py-xs">
+            <span className="font-data-sm text-data-sm text-error">{error}</span>
           </div>
         )}
-
-        {/* Selection Summary */}
-        {selectedEventData && selectedSessionData && !ingesting && (
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-sm">
-            <div className="font-medium mb-2">Selected:</div>
-            <div>
-              {selectedYear} - {selectedEventData.event_name}
-            </div>
-            <div>{selectedSessionData.session_type}</div>
-            {selectedSessionData.is_ingested && (
-              <div className="text-green-600 dark:text-green-400 mt-2">✓ Data already ingested</div>
-            )}
-          </div>
-        )}
-
-        {/* Action Button */}
-        <Button
-          onClick={handleIngestAndLoad}
-          disabled={!canIngest || ingesting}
-          isLoading={ingesting}
-          className="w-full"
-        >
-          {selectedSessionData?.is_ingested ? "Load Session" : "Ingest & Load"}
-        </Button>
       </div>
-    </Card>
+
+      {/* CTA */}
+      <div className="p-md border-t border-surface-container-high bg-surface-container-lowest">
+        <button
+          onClick={handleLoad}
+          disabled={!canLoad || ingesting}
+          className="w-full bg-primary-container text-on-primary-container font-label-caps text-label-caps h-10 uppercase tracking-widest flex items-center justify-center gap-sm hover:bg-inverse-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <span className="material-symbols-outlined text-[16px]">memory</span>
+          {ingesting
+            ? "Ingesting..."
+            : selectedSessionData?.is_ingested
+            ? "Load Telemetry"
+            : "Initialize Telemetry"}
+        </button>
+      </div>
+    </div>
   );
 }
