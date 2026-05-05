@@ -4,7 +4,7 @@
  * Client functions for live F1 data streaming endpoints.
  */
 
-import { apiClient } from './client';
+import { apiGet, apiPost } from './client';
 
 export interface LiveSession {
   id: string;
@@ -37,6 +37,7 @@ export interface LiveEvent {
   lap_number: number | null;
   message: string;
   flag: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
   timestamp: string;
 }
@@ -44,100 +45,63 @@ export interface LiveEvent {
 export interface LiveUpdate {
   type: 'live_update';
   data: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     timing: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pit_stops: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     race_control: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     session_status: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     weather: any;
   };
   timestamp: string;
   session_id: string;
 }
 
-/**
- * Start a live streaming session
- */
 export async function startLiveSession(
   sessionId: string,
   openf1SessionKey: string
 ): Promise<LiveSession> {
-  const response = await apiClient.post<LiveSession>(
-    `/live/sessions/start`,
-    null,
-    {
-      params: {
-        session_id: sessionId,
-        openf1_session_key: openf1SessionKey,
-      },
-    }
+  return apiPost<LiveSession>(
+    `/live/sessions/start?session_id=${encodeURIComponent(sessionId)}&openf1_session_key=${encodeURIComponent(openf1SessionKey)}`
   );
-  return response.data;
 }
 
-/**
- * Stop a live streaming session
- */
 export async function stopLiveSession(
   liveSessionId: string
 ): Promise<{ message: string; live_session_id: string }> {
-  const response = await apiClient.post(
-    `/live/sessions/${liveSessionId}/stop`
-  );
-  return response.data;
+  return apiPost(`/live/sessions/${liveSessionId}/stop`);
 }
 
-/**
- * Get all active live sessions
- */
 export async function getActiveLiveSessions(): Promise<LiveSession[]> {
-  const response = await apiClient.get<LiveSession[]>('/live/sessions/active');
-  return response.data;
+  return apiGet<LiveSession[]>('/live/sessions/active');
 }
 
-/**
- * Get live timing data for a session
- */
 export async function getLiveTiming(
   liveSessionId: string,
   limit: number = 100
 ): Promise<LiveTiming[]> {
-  const response = await apiClient.get<LiveTiming[]>(
-    `/live/sessions/${liveSessionId}/timing`,
-    {
-      params: { limit },
-    }
-  );
-  return response.data;
+  return apiGet<LiveTiming[]>(`/live/sessions/${liveSessionId}/timing`, { limit });
 }
 
-/**
- * Get live events for a session
- */
 export async function getLiveEvents(
   liveSessionId: string,
   eventType?: string,
   limit: number = 100
 ): Promise<LiveEvent[]> {
-  const response = await apiClient.get<LiveEvent[]>(
-    `/live/sessions/${liveSessionId}/events`,
-    {
-      params: { event_type: eventType, limit },
-    }
-  );
-  return response.data;
+  return apiGet<LiveEvent[]>(`/live/sessions/${liveSessionId}/events`, {
+    ...(eventType ? { event_type: eventType } : {}),
+    limit,
+  });
 }
 
-/**
- * Get WebSocket connection count
- */
 export async function getConnectionCount(
   sessionId?: string
 ): Promise<{ count: number; session_id: string | null }> {
-  const response = await apiClient.get<{ count: number; session_id: string | null }>(
+  return apiGet<{ count: number; session_id: string | null }>(
     '/live/connections/count',
-    {
-      params: sessionId ? { session_id: sessionId } : {},
-    }
+    sessionId ? { session_id: sessionId } : {}
   );
-  return response.data;
 }

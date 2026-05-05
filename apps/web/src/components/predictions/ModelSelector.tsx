@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchModels } from "@/lib/api/predictions";
 import type { Model } from "@/types/predictions";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 
 interface ModelSelectorProps {
   selectedModel: string | null;
@@ -37,7 +37,8 @@ export function ModelSelector({
 
   if (loading) {
     return (
-      <Card title="Select Model">
+      <Card>
+        <CardHeader title="Select Model" />
         <div className="flex items-center justify-center py-12">
           <div className="text-gray-500">Loading models...</div>
         </div>
@@ -47,7 +48,8 @@ export function ModelSelector({
 
   if (error) {
     return (
-      <Card title="Select Model">
+      <Card>
+        <CardHeader title="Select Model" />
         <div className="flex items-center justify-center py-12">
           <div className="text-red-500">Error: {error}</div>
         </div>
@@ -80,7 +82,8 @@ export function ModelSelector({
   };
 
   return (
-    <Card title="Select Model">
+    <Card>
+      <CardHeader title="Select Model" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {modelList.map((model) => (
           <button

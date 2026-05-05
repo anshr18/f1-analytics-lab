@@ -1,10 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { fetchLaps } from "@/lib/api/laps";
 import { durationToSeconds, formatLapTime } from "@/lib/api/client";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import type { Lap } from "@/types/api";
 
@@ -45,10 +54,18 @@ export function LapChart({ sessionId }: LapChartProps) {
       const laps = await fetchLaps(sessionId);
 
       // Filter out deleted laps and pit laps
-      const validLaps = laps.filter((lap) => !lap.deleted && !lap.is_pit_out_lap && !lap.is_pit_in_lap && lap.lap_time);
+      const validLaps = laps.filter(
+        (lap) =>
+          !lap.deleted &&
+          !lap.is_pit_out_lap &&
+          !lap.is_pit_in_lap &&
+          lap.lap_time,
+      );
 
       // Get unique drivers
-      const uniqueDrivers = Array.from(new Set(validLaps.map((lap) => lap.driver_id)));
+      const uniqueDrivers = Array.from(
+        new Set(validLaps.map((lap) => lap.driver_id)),
+      );
       setDrivers(uniqueDrivers);
 
       // Group by lap number
@@ -84,7 +101,8 @@ export function LapChart({ sessionId }: LapChartProps) {
 
   if (loading) {
     return (
-      <Card title="Lap Time Evolution">
+      <Card>
+        <CardHeader title="Lap Time Evolution" />
         <div className="h-96 flex items-center justify-center">
           <Spinner size="lg" />
         </div>
@@ -94,32 +112,53 @@ export function LapChart({ sessionId }: LapChartProps) {
 
   if (error) {
     return (
-      <Card title="Lap Time Evolution">
-        <div className="h-96 flex items-center justify-center text-red-500">{error}</div>
+      <Card>
+        <CardHeader title="Lap Time Evolution" />
+        <div className="h-96 flex items-center justify-center text-red-500">
+          {error}
+        </div>
       </Card>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <Card title="Lap Time Evolution">
-        <div className="h-96 flex items-center justify-center text-gray-500">No lap data available</div>
+      <Card>
+        <CardHeader title="Lap Time Evolution" />
+        <div className="h-96 flex items-center justify-center text-gray-500">
+          No lap data available
+        </div>
       </Card>
     );
   }
 
   return (
-    <Card title="Lap Time Evolution">
+    <Card>
+      <CardHeader title="Lap Time Evolution" />
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="lap" label={{ value: "Lap Number", position: "insideBottom", offset: -5 }} />
+          <XAxis
+            dataKey="lap"
+            label={{
+              value: "Lap Number",
+              position: "insideBottom",
+              offset: -5,
+            }}
+          />
           <YAxis
-            label={{ value: "Lap Time (seconds)", angle: -90, position: "insideLeft" }}
+            label={{
+              value: "Lap Time (seconds)",
+              angle: -90,
+              position: "insideLeft",
+            }}
             tickFormatter={(value) => value.toFixed(1)}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }}
+            contentStyle={{
+              backgroundColor: "#1f2937",
+              border: "1px solid #374151",
+            }}
             formatter={(value: number) => formatLapTime(value)}
           />
           <Legend />
@@ -128,7 +167,10 @@ export function LapChart({ sessionId }: LapChartProps) {
               key={driver}
               type="monotone"
               dataKey={driver}
-              stroke={DRIVER_COLORS[driver] || `hsl(${(index * 360) / drivers.length}, 70%, 50%)`}
+              stroke={
+                DRIVER_COLORS[driver] ||
+                `hsl(${(index * 360) / drivers.length}, 70%, 50%)`
+              }
               name={driver.toUpperCase()}
               dot={false}
               strokeWidth={2}

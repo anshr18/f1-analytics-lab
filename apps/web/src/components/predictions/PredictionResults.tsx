@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import type {
   TyreDegradationPrediction,
   LapTimePrediction,
@@ -164,7 +164,8 @@ export function PredictionResults({
   );
 
   return (
-    <Card title="Prediction Result">
+    <Card>
+      <CardHeader title="Prediction Result" />
       {modelName === "tyre_degradation" &&
         renderTyreDegradation(result as TyreDegradationPrediction)}
       {modelName === "lap_time" && renderLapTime(result as LapTimePrediction)}

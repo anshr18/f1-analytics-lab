@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import {
   predictLapTime,
   predictOvertake,
@@ -150,7 +150,8 @@ export function PredictionSummaryCard({
   };
 
   return (
-    <Card title={title}>
+    <Card>
+      <CardHeader title={title} />
       <div className="py-2">{renderContent()}</div>
     </Card>
   );
